@@ -18,7 +18,7 @@ Ce guide explique comment configurer un serveur DNS redondant sous Debian 12 en 
 
 Sur chaque machine, modifiez les fichiers `/etc/hosts` et `/etc/hostname` :
 
-1. Ouvrez le fichier `/etc/hostname` et remplacez le contenu par `srv-dns1` dans la premirèe pachine et `srv-dns2` pour la seconde machine.
+1. Ouvrez le fichier `/etc/hostname` et remplacez le contenu par `srv-dns1` dans la première machine et `srv-dns2` pour la seconde machine.
 2. Ouvrez le fichier `/etc/hosts` et ajoutez les lignes suivantes :
 
    ```
