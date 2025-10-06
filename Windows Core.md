@@ -82,7 +82,7 @@ Get-DhcpServerv4OptionValue -ComputerName $nomServeurDHCP -ScopeId $IPreseau
 # Remove-DhcpServerv4Scope -ScopeId $IPreseau -Force
 ```
 
-# Installation des fonctionnalités RSAT en powershell
+# Installation des fonctionnalités RSAT en powershell sur Win10-Tiny
 1. Visualiser les fonctionnalités installées
 ```powershell
 Get-WindowsCapability -Name "RSAT*" -Online | Select-Object -Property DisplayName, State
@@ -95,3 +95,9 @@ Get-WindowsCapability -Name "RSAT*" -Online | Select-Object -Property Name, Disp
 ```powershell
 Add-WindowsCapability -Online -Name "<nom de l'outil RSAT>"
 ```
+
+Ajouter la machine Win-Core dans le gestionnaire de serveur :
+
+ouvrir le gestionnaire de serveur sur la machine win 10 tiny puis dans Gérer ajouter des serveurs, dans DNS mettre l'ip de la machine WinCore , cliquer sur la flèche au milieu pour la faire aller sur la fenêtre de droite puis OK et se login avec les identifiants. Puis faire clic droit sur le serveur et gérer en tant que puis encore de login. 
+
+
