@@ -71,7 +71,7 @@ Ce TP montre comment configurer une machine virtuelle Windows 11 et utiliser Win
 - Désactiver **TOUTES** les interfaces réseaux sur la machine Sandbox et sur la machine virtuelle.
 - Utiliser Regshot pour :
   - Prendre un premier snapshot de la base de registre (`avant.hive`)
-  - Exécuter le programme à analyser (**WannaCry**)
+  - Exécuter le programme à analyser (**WannaCry** dans la **partie 5**)
   - Prendre un second snapshot (`après.hive`)
   - Comparer les deux snapshots pour observer les modifications système
 
