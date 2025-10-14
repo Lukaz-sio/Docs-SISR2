@@ -76,7 +76,19 @@ Ce TP montre comment configurer une machine virtuelle Windows 11 et utiliser Win
 
 ---
 
-### 5. Précautions et nettoyage
+### 5. Utilisation de samples WannaCry
+
+- Télécharger sur theZoo (usage pédagogique en Sandbox/VM isolée) : malware/Binaries/Ransomware.WannaCry/Ransomware.WannaCry.zip​
+
+- Ouvrir uniquement dans la Sandbox ; l’archive est protégée par mot de passe fourni par theZoo.
+
+#### Qu'est ce que WannaCry fait sur le PC ?
+
+- Chiffre des fichiers, modifie l’arrière‑plan, affiche une note de rançon et propose un « decryptor » local.​
+
+- Supprime les shadow copies et installe des composants (dont Tor/local) pour la communication C2.​ 
+
+### 6. Précautions et nettoyage
 
 - **Désactiver toutes les interfaces réseau** avant d’exécuter un programme inconnu.
 - À la fermeture de Windows Sandbox, toutes les données sont supprimées.
