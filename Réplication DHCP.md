@@ -25,7 +25,7 @@ Install-WindowsFeature -Name DHCP -IncludeManagementTools
 ### 2. Configuration de l’étendue sur le premier serveur
 
 - Sur le premier serveur, ouvrir la console DHCP.
-- Créer et configurer l’étendue (plage d’adresses, options, etc.) dans DHCP ou en Powershell.
+- Créer et configurer l’étendue (plage d’adresses, options, etc.) ou en Powershell.
 
 Création d'une étendue DHCP en Powershell :
 
