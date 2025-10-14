@@ -15,7 +15,7 @@ Ce TP montre comment configurer une machine virtuelle Windows 11 et utiliser Win
 
 ### 1. Création et configuration de la machine virtuelle
 
-- Créer une VM Windows 11 Pro sur ESXi.
+- Créer une VM Windows 11 **Pro** sur ESXi.
 - Dans les paramètres avancés de la VM, ajouter :
   - `isolation.tools.paste.disable = FALSE`
   - `isolation.tools.setGUIOptions.enable = TRUE`
@@ -91,9 +91,6 @@ Ce TP montre comment configurer une machine virtuelle Windows 11 et utiliser Win
 - Respecter la législation en vigueur et les règles de sécurité informatique.
 
 ---
-
-Tu peux adapter cette documentation pour GitHub en ajoutant des sections "Ressources" ou "Pour aller plus loin" si besoin.
-
 
 
 
