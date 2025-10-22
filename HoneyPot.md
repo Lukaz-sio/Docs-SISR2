@@ -119,5 +119,3 @@ Les logs de Cowrie se trouvent par défaut dans le répertoire `var/log/cowrie/`
 - Référence : [Dépôt officiel Cowrie](https://github.com/cowrie/cowrie)
 
 ---
-
-Fichier original converti en documentation structurée pour installation et tests de Cowrie sur Debian 13.
