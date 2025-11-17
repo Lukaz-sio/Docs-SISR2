@@ -186,3 +186,23 @@
    - Nom : `WIN-SRV1`
    - Groupe : `Windows-Serveur`
    - Adresse IP : `<IP_DU_SERVEUR_WINDOWS>` 
+
+# Supervision du serveur SRV-WEB1
+
+Sur le serveur web, modifier le fichier `/etc/apache2/mods-enabled/status.conf` et modifier la partie suivante :
+
+```ini
+<Location /server-status>
+         SetHandler server-status 
+         Require ip 127.0.0.1 192.168.0.0/24 172.16.0.5/32
+<Location>
+```
+Installez ensuite le paquet zabbix-agent sur le serveur web. Dans le fichier de configuration /etc/zabbix/zabbix-
+agentd.conf, configurez l’adresse IP du serveur Zabbix pour `Server` et `ServerActive`.
+
+Sur l'interface web de Zabbix 
+
+
+
+
+Règle de pare feu côté LAN ouvrir port TCP Destination autre 10050
