@@ -506,3 +506,81 @@ et un nouveau Dashboard sont créés.
 · Revenez l’activité sur la mise en place de l’IPS du Stormshield. Retrouvez sur Graylog les
 logs correspondants aux différentes attaques menées avec la Kali. Si besoin, modifiez le
 Dashboard.
+
+# Centraliser les logs : alertes par email
+
+Pour commencer, aller sur son compte gmail, cliquer sur sa photo de profil, aller dans `Gérer votre compte Google` puis dans `Sécurité et connexion`, rechercher dans la barre `Mots de passe des applications`, mettez le nom de l'application `graylog` et copier le mdp dans un bloc notes en enlevant les espaces.
+
+Sur la machine Graylog, éditer le fichier de configuration graylog
+
+```bash
+nano /etc/graylog/server/server.conf
+```
+
+éditer la partie `Email transport`
+
+décommenter toute la partie email transport et modifier :
+
+```ini
+transport_email_enabled = true
+transport_email_hostname = smtp@gmail.com
+transport_email_port = 587
+transport_email_use_auth = true
+transport_email_auth_username = adresse mail
+transport_email_auth_password = secret
+transport_email_from_email = adresse mail
+transport_email_socket_connection_timeout = 10s
+transport_email_socket_timeout = 10s
+```
+
+Plus loin, décommenter ces 2 lignes 
+
+```ini
+transport_email_use_tls = true
+
+transport_email_web_interface_url = http://172.16.0.6:9000
+```
+
+redémarrer le service graylog 
+
+```bash
+systemctl restart graylog-server.service
+```
+
+Sur Stormshield, créer une nouvelle règle pour laisser passer SMTP 
+
+Dans security policy, créer une règle de filtering
+
+
+
+|ON   |   PASS    |    ANY  |   ANY   |  submission|
+
+
+
+tester la connexion au serveur SMTP avec telnet
+
+```bash
+telnet smtp.gmail.com 587
+```
+
+Il devrait renvoyer `Connected to smtp.gmail.com`
+
+Installer ensuite s-nail sur Graylog
+
+```bash
+apt install s-nail
+```
+
+Puis créer un fichier de configuration 
+
+```bash
+cat > ~/.mailrc <<EOF
+set mta=smtp://smtp.gmail.com:587
+set smtp-use-starttls
+set smtp-auth=login
+set smtp-auth-user="votre_mail@gmail.com"
+set smtp-auth-password="mot_de_passe_de_l’application"
+set from="votre_mail@gmail.com"
+EOF
+```
+
