@@ -1,101 +1,155 @@
-# Installation de Graylog sur une Debian 12
+# 🚀 Installation de Graylog 6.1 sur Debian 12
 
-Configurer l'IP de la machine Debian et modifier son nom
+Ce document détaille les étapes de configuration système, d'installation des prérequis (MongoDB, OpenSearch) et de déploiement de Graylog Server 6.1 sur une machine Debian 12.
 
-```bash
-nano /etc/network/interfaces
-```
+---
 
+## 1. ⚙️ Configuration Initiale du Système
 
-Pour appliquer le fuseau horaire Europe/Paris sur votre machine Debian:
+### 1.1. Configuration Réseau et Nom de la Machine
 
-```bash
-timedatectl set-timezone Europe/Paris
-``` 
+1.  Configurer l'IP de la machine Debian et modifier son nom :
 
-Nous allons synchroniser l’horloge de nos serveurs avec un serveur de temps de l’université de Rennes2 : ntp.univ-rennes2.fr. En cas de défaillance de ce serveur de temps, nous utiliserons des serveurs du pool.ntp.org.
+    ```bash
+    nano /etc/network/interfaces
+    ```
 
-Éditez le fichier /etc/systemd/timesyncd.conf et paramétrez le serveur de temps utilisé :
+### 1.2. Configuration du Fuseau Horaire
 
-```bash
-[Time]
-NTP=ntp.univ-rennes2.fr
-FallbackNTP=0.debian.pool.ntp.org 1.debian.pool.ntp.org 2.debian.pool.ntp.org 3.debian.pool.ntp.org
-```
+1.  Appliquer le fuseau horaire **Europe/Paris** :
 
-Il reste à définir le service NTP actif :
+    ```bash
+    timedatectl set-timezone Europe/Paris
+    ```
 
-```bash
-timedatectl set-ntp true
-```
+### 1.3. Configuration et Synchronisation NTP
 
-Vérifiez alors que la synchronisation fonctionne en utilisant les commandes timedatectl et timedatectl
+Nous synchronisons l’horloge avec le serveur de l’université de Rennes2, avec des serveurs de pool en secours.
 
-```bash
-timesync-status ... Ceci n’est pas immédiat et peut prendre plusieurs minutes...
-timedatectl
-timedatectl timesync-status
-```
+1.  Éditez le fichier `/etc/systemd/timesyncd.conf` et paramétrez les serveurs de temps :
 
-mettre à jour la machine 
+    ```bash
+    nano /etc/systemd/timesyncd.conf
+    ```
+
+    ```ini
+    [Time]
+    NTP=ntp.univ-rennes2.fr
+    FallbackNTP=0.debian.pool.ntp.org 1.debian.pool.ntp.org 2.debian.pool.ntp.org 3.debian.pool.ntp.org
+    ```
+
+2.  Définir le service NTP comme actif :
+
+    ```bash
+    timedatectl set-ntp true
+    ```
+
+3.  Vérifiez la synchronisation (peut prendre quelques minutes) :
+
+    ```bash
+    timedatectl
+    timedatectl timesync-status
+    ```
+
+### 1.4. Mise à Jour du Système
 
 ```bash
 apt update 
 apt upgrade -y
 ```
 
-Installer les paquets nécessaires pour installer Graylog 
+## 2. 💾 Installation des Prérequis : MongoDB (v6.0)
+
+### 2.1. Ajout du Dépôt et de la Clé MongoDB
+
+1.  Installer les paquets nécessaires et ajouter la clé GPG MongoDB :
 
 ```bash
 apt-get install curl lsb-release ca-certificates gnupg2 pwgen
 
-curl -fsSL https://www.mongodb.org/static/pgp/server-6.0.asc | gpg -o /usr/share/keyrings/mongodb-server-6.0.gpg --dearmor
+curl -fsSL [https://www.mongodb.org/static/pgp/server-6.0.asc](https://www.mongodb.org/static/pgp/server-6.0.asc) | gpg -o /usr/share/keyrings/mongodb-server-6.0.gpg --dearmor
+```
 
-echo "deb [ signed-by=/usr/share/keyrings/mongodb-server-6.0.gpg] http://repo.mongodb.org/apt/debian bullseye/mongodb-org/6.0 main" | tee /etc/apt/sources.list.d/mongodb-org-6.0.list
+2.  Ajouter le dépôt MongoDB 6.0 (notez que `bullseye` est utilisé pour Debian 12) :
 
+```bash
+echo "deb [ signed-by=/usr/share/keyrings/mongodb-server-6.0.gpg] [http://repo.mongodb.org/apt/debian](http://repo.mongodb.org/apt/debian) bullseye/mongodb-org/6.0 main" | tee /etc/apt/sources.list.d/mongodb-org-6.0.list
+```
+
+3.  Mise à jour et installation de la dépendance `libssl1.1` (nécessaire pour MongoDB 6.0 sur Debian 12) :
+
+```bash
 apt update
+wget [http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2.24_amd64.deb](http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2.24_amd64.deb)
+dpkg -i libssl1.1_1.1.1f-1ubuntu2.24_amd64.deb
+```
 
-wget http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2.24_amd64.deb
+4.  Installer MongoDB :
 
-dpkg -i libssl1.1_1.1.1f-1ubuntu2.23_amd64.deb
-
+```bash
 apt-get install -y mongodb-org
-
 apt update
-``` 
+```
 
-Ensuite, relancez le service MongoDB et activez son démarrage automatique au lancement du serveur Debian.
+### 2.2. Démarrage et Activation de MongoDB
+
+1.  Recharger le service, l'activer au démarrage et le démarrer :
 
 ```bash
 systemctl daemon-reload
 systemctl enable mongod.service
 systemctl restart mongod.service
+```
+
+2.  Vérifier que le service est actif :
+
+```bash
 systemctl --type=service --state=active | grep mongod
 ```
 
-Nous allons passer à l'installation d'OpenSearch sur le serveur. La commande suivante permet d’ajouter la clé de signature pour les paquets OpenSearch :
+## 3. 🔎 Installation des Prérequis : OpenSearch (v2.x)
+
+### 3.1. Ajout du Dépôt OpenSearch
+
+1.  Ajouter la clé de signature pour les paquets OpenSearch :
 
 ```bash
-curl -o- https://artifacts.opensearch.org/publickeys/opensearch.pgp | gpg --dearmor --batch --yes -o /usr/share/keyrings/opensearch-keyring
+curl -o- [https://artifacts.opensearch.org/publickeys/opensearch.pgp](https://artifacts.opensearch.org/publickeys/opensearch.pgp) | gpg --dearmor --batch --yes -o /usr/share/keyrings/opensearch-keyring
+```
 
-echo "deb [signed-by=/usr/share/keyrings/opensearch-keyring] https://artifacts.opensearch.org/releases/bundle/opensearch/2.x/apt stable main" | tee /etc/apt/sources.list.d/opensearch-2.x.list
+2.  Ajouter le dépôt OpenSearch 2.x :
 
+```bash
+echo "deb [signed-by=/usr/share/keyrings/opensearch-keyring] [https://artifacts.opensearch.org/releases/bundle/opensearch/2.x/apt](https://artifacts.opensearch.org/releases/bundle/opensearch/2.x/apt) stable main" | tee /etc/apt/sources.list.d/opensearch-2.x.list
+```
+
+3.  Mettre à jour la liste des paquets :
+
+```bash
 apt-get update
 ```
 
-Puis, installez OpenSearch en prenant soin de définir le mot de passe par défaut pour le compte Admin de votre instance. Ici, le mot de passe est "Rootsio2017!", mais remplacez cette valeur par un mot de passe robuste. Évitez les mots de passe faibles du style "P@ssword123" et utilisez au moins 8 caractères avec au moins un caractère de chaque type (minuscule, majuscule, chiffre et caractère spécial), sinon il y aura une erreur à la fin de l'installation. C'est un prérequis depuis OpenSearch 2.12.
+### 3.2. Installation d'OpenSearch
+
+L'installation nécessite de définir un **mot de passe administrateur initial** robuste (min. 8 caractères, incluant min./maj., chiffre, spécial).
+
+1.  Installer OpenSearch (remplacez `Rootsio2017!` par votre mot de passe) :
 
 ```bash
 env OPENSEARCH_INITIAL_ADMIN_PASSWORD=Rootsio2017! apt-get install opensearch
 ```
 
-Quand c'est terminé, prenez le temps d'effectuer la configuration minimale. Ouvrez le fichier de configuration au format YAML :
+### 3.3. Configuration Minimale d'OpenSearch
+
+1.  Ouvrir le fichier de configuration YAML :
 
 ```bash
 nano /etc/opensearch/opensearch.yml
 ```
 
-```yml
+2.  Ajoutez ou modifiez les lignes suivantes :
+
+```yaml
 cluster.name: graylog
 node.name: ${HOSTNAME}
 path.data: /var/lib/opensearch
@@ -106,27 +160,26 @@ action.auto_create_index: false
 plugins.security.disabled: true
 ```
 
-Vous devez configurer Java Virtual Machine utilisé par OpenSearch afin d'ajuster la quantité de mémoire que peut utiliser ce service. Éditez le fichier de configuration suivant :
+### 3.4. Configuration de la JVM (Mémoire Allouée)
+
+Ajustez la mémoire allouée à OpenSearch (ici **2 Go**) dans le fichier de configuration de la JVM (`/etc/opensearch/jvm.options`).
+
+1.  Éditez le fichier de configuration :
 
 ```bash
 nano /etc/opensearch/jvm.options
 ```
 
-Avec la configuration déployée ici, OpenSearch démarrera avec une mémoire allouée de 2 Go et pourra atteindre jusqu'à 2 Go, il n'y aura donc pas de variation de mémoire pendant le fonctionnement. Ici, la configuration tient compte du fait que la machine virtuelle dispose d'un total de 4 Go de RAM. Les deux paramètres doivent avoir la même valeur. Ceci implique de remplacer ces lignes :
+2.  Remplacez les lignes suivantes pour allouer 2 Go :
 
-```ini
--Xms1g
--Xmx1g
-``` 
+| Ancien | Nouveau |
+| :--- | :--- |
+| `-Xms1g` | `-Xms2g` |
+| `-Xmx1g` | `-Xmx2g` |
 
-Par :
+### 3.5. Démarrage et Vérification d'OpenSearch
 
-```ini
--Xms2g
--Xmx2g
-``` 
-
-Enfin, activez le démarrage automatique d'OpenSearch et lancez le service associé.
+1.  Activer le démarrage automatique et lancer le service :
 
 ```bash
 systemctl daemon-reload
@@ -134,90 +187,92 @@ systemctl enable opensearch
 systemctl restart opensearch
 ```
 
-Si vous affichez l'état de votre système, vous devriez voir un processus Java avec 4 Go de RAM et comme nom Opensearch.
+2.  Vérifiez l'utilisation de la mémoire :
 
 ```bash
 top
 ```
 
-Pour effectuer l'installation de Graylog 6.1 dans sa dernière version, exécutez les 4 commandes suivantes afin de télécharger et d'installer Graylog Server :
+## 4. 🚀 Installation et Configuration de Graylog Server (v6.1)
 
-```bash
-wget https://packages.graylog2.org/repo/packages/graylog-6.1-repository_latest.deb
-dpkg -i graylog-6.1-repository_latest.deb
-apt-get update
-apt-get install graylog-server
-```
+### 4.1. Installation du Paquet Graylog
 
-Quand c'est fait, nous devons apporter des modifications à la configuration de Graylog avant de chercher à le lancer.
+1.  Exécutez les 4 commandes suivantes pour télécharger et installer Graylog Server 6.1 :
 
-Commençons par configurer ces deux options :
+    ```bash
+    wget [https://packages.graylog2.org/repo/packages/graylog-6.1-repository_latest.deb](https://packages.graylog2.org/repo/packages/graylog-6.1-repository_latest.deb)
+    dpkg -i graylog-6.1-repository_latest.deb
+    apt-get update
+    apt-get install graylog-server
+    ```
 
-    password_secret : ce paramètre sert à définir une clé utilisée par Graylog pour sécuriser le stockage des mots de passe utilisateurs (dans l'esprit d'une clé de salage). Cette clé doit être unique et aléatoire.
-    root_password_sha2 : ce paramètre correspond au mot de passe de l’administrateur par défaut dans Graylog. Il est stocké sous forme d'un hash SHA-256.
+### 4.2. Configuration de `password_secret` et `root_password_sha2`
 
-Nous allons commencer par générer une clé de 96 caractères pour le paramètre password_secret :
+Ces deux paramètres sont essentiels pour la sécurité et doivent être configurés dans le fichier `/etc/graylog/server/server.conf`.
 
-```bash
-pwgen -N 1 -s 96
-```
+1.  Générez une clé aléatoire de 96 caractères pour le paramètre `password_secret` :
 
-Copiez la valeur retournée, puis ouvrez le fichier de configuration de Graylog :
+    ```bash
+    pwgen -N 1 -s 96
+    ```
 
-```bash
-nano /etc/graylog/server/server.conf
-```
+2.  **Copiez la valeur** retournée, puis ouvrez le fichier de configuration :
 
-Collez la clé au niveau du paramètre password_secret
+    ```bash
+    nano /etc/graylog/server/server.conf
+    ```
 
-Enregistrez et fermez le fichier.
+3.  Collez la clé au niveau du paramètre `password_secret`.
 
-Ensuite, vous devez définir le mot de passe du compte "admin" créé par défaut. Dans le fichier de configuration, c'est le hash du mot de passe qui doit être stocké, ce qui implique de le calculer. L'exemple ci-dessous permet d'obtenir le hash du mot de passe "Rootsio2017" : adaptez la valeur avec votre mot de passe.
+4.  Générez le hash **SHA-256** de votre mot de passe administrateur (remplacez `Rootsio2017` par votre mot de passe) :
 
-```bash
-echo -n "Rootsio2017" | shasum -a 256
-```
+    ```bash
+    echo -n "Rootsio2017" | shasum -a 256
+    ```
 
-Copiez la valeur obtenue en sortie (sans le tiret en bout de ligne).
+5.  **Copiez la valeur obtenue** (sans le tiret en bout de ligne).
 
-Ouvrez de nouveau le fichier de configuration de Graylog :
+6.  Collez cette valeur dans le fichier de configuration au niveau de l'option `root_password_sha2`.
 
-```bash
-nano /etc/graylog/server/server.conf
-```
+### 4.3. Configuration d'Accès et Liaison OpenSearch
 
-Collez la valeur au niveau de l'option root_password_sha2 
+Modifiez les options suivantes dans le fichier `/etc/graylog/server/server.conf` :
 
-Profitez d'être dans le fichier de configuration pour configurer l'option nommée "http_bind_address". Indiquez "0.0.0.0:9000" pour que l'interface web de Graylog soit accessible sur le port 9000, via n'importe quelle adresse IP du serveur.
+1.  Définir l'adresse d'écoute de l'interface web (accessible sur le port 9000 par toutes les IPs) :
 
-```bash
-http_bind_address = 0.0.0.0:9000
-```
+    ```ini
+    http_bind_address = 0.0.0.0:9000
+    ```
 
-Puis, configurez l'option "elasticsearch_hosts" avec la valeur "http://127.0.0.1:9200" pour déclarer notre instance locale OpenSearch. Ceci est nécessaire, car nous n'utilisons pas de Graylog Data Node. Et sans cette option, il ne sera pas possible d'aller plus loin...
+2.  Déclarer l'instance OpenSearch locale :
 
-```bash
-elasticsearch_hosts =http://127.0.0.1:9200
-```
+    ```ini
+    elasticsearch_hosts = [http://127.0.0.1:9200](http://127.0.0.1:9200)
+    ```
 
-Modifier root_timezone, décommentez la ligne et mettre `Europe/Paris`
+3.  Définir le fuseau horaire de l'interface d'administration :
 
-```bash
-root_timezone = Europe/Paris
-```
+    ```ini
+    root_timezone = Europe/Paris
+    ```
 
-Enregistrez et fermez le fichier.
+4.  Enregistrez et fermez le fichier.
 
-Cette commande active Graylog pour qu'il démarre automatiquement au prochain démarrage et elle lance immédiatement le serveur Graylog.
+### 4.4. Démarrage de Graylog
 
-```bash
-systemctl enable --now graylog-server
-```
+1.  Activer le démarrage automatique et lancer immédiatement le serveur Graylog :
 
-Accéder à l'interface web de graylog http://172.16.0.6:9000 (172.16.0.6 étant l'IP de ma machine Debian 12)
+    ```bash
+    systemctl enable --now graylog-server
+    ```
 
-login : admin
-MDP : Rootsio2017
+### 4.5. Accès à l'Interface Web
+
+| Rôle | Valeur |
+| :--- | :--- |
+| **URL d'accès** | `http://172.16.0.6:9000` (Remplacez l'IP par celle de votre machine Debian 12) |
+| **Login** | `admin` |
+| **Mot de passe** | `Rootsio2017` (ou le mot de passe défini) 
 
 # 💻 Documentation Graylog : Centralisation des Logs
 
@@ -454,23 +509,30 @@ Pour régler le problème **NTP : possible attaque de type poisoning** sur Storm
 * Recherchez la règle d'alarme pour **NTP : possible attaque de type poisoning**.
 * **Autoriser ce message**.
 
-# Centraliser les logs : alertes par email
+# 📧 Centraliser les logs : alertes par email
 
-Pour commencer, aller sur son compte gmail, cliquer sur sa photo de profil, aller dans `Gérer votre compte Google` puis dans `Sécurité et connexion`, rechercher dans la barre `Mots de passe des applications`, mettez le nom de l'application `graylog` et copier le mdp dans un bloc notes en enlevant les espaces.
+### 1. Configuration du Compte Google (Mot de passe d'application)
 
-Sur la machine Graylog, éditer le fichier de configuration graylog
+1.  Connectez-vous à votre compte Gmail.
+2.  Cliquez sur votre photo de profil, puis sur **`Gérer votre compte Google`**.
+3.  Allez dans la section **`Sécurité`** (ou `Sécurité et connexion`).
+4.  Recherchez **`Mots de passe des applications`** (vous devrez peut-être vous reconnecter).
+5.  Créez un nouveau mot de passe d'application, donnez-lui le nom **`graylog`**.
+6.  **Copiez le mot de passe généré** et collez-le dans un bloc-notes en **supprimant tous les espaces**.
+
+### 2. Configuration du Serveur Graylog
+
+1.  Éditez le fichier de configuration Graylog sur la machine Graylog :
 
 ```bash
 nano /etc/graylog/server/server.conf
 ```
 
-éditer la partie `Email transport`
-
-décommenter toute la partie email transport et modifier :
+2.  **Éditez la partie `Email transport`** en décommentant les lignes et en modifiant les valeurs suivantes (remplacez `adresse mail` par votre adresse Gmail et `secret` par le mot de passe d'application généré à l'étape 1) :
 
 ```ini
 transport_email_enabled = true
-transport_email_hostname = smtp@gmail.com
+transport_email_hostname = smtp.gmail.com
 transport_email_port = 587
 transport_email_use_auth = true
 transport_email_auth_username = adresse mail
@@ -480,45 +542,47 @@ transport_email_socket_connection_timeout = 10s
 transport_email_socket_timeout = 10s
 ```
 
-Plus loin, décommenter ces 2 lignes 
+3.  Plus loin, décommentez ces 2 lignes pour activer TLS et définir l'URL de l'interface :
 
 ```ini
 transport_email_use_tls = true
 
-transport_email_web_interface_url = http://172.16.0.6:9000
+transport_email_web_interface_url = [http://172.16.0.6:9000](http://172.16.0.6:9000)
 ```
 
-redémarrer le service graylog 
+4.  Redémarrez le service Graylog :
 
 ```bash
 systemctl restart graylog-server.service
 ```
 
-Sur Stormshield, créer une nouvelle règle pour laisser passer SMTP 
+### 3. Création de la Règle Stormshield pour SMTP
 
-Dans security policy, créer une règle de filtering
-
+Créez une nouvelle règle de **filtering** dans la **Security Policy** du Stormshield pour laisser passer le trafic SMTP chiffré (`submission` est le port 587).
 
 | Status | Action | Source | Destination | Dest. Port |
 | :---: | :---: | :---: | :---: | :---: |
 | ON | PASS | ANY | ANY | submission |
 
+### 4. Test de Connexion SMTP
 
-tester la connexion au serveur SMTP avec telnet
+1.  Testez la connexion au serveur SMTP avec `telnet` depuis la machine Graylog :
 
 ```bash
 telnet smtp.gmail.com 587
 ```
 
-Il devrait renvoyer `Connected to smtp.gmail.com`
+2.  Le résultat attendu est : **`Connected to smtp.gmail.com`**.
 
-Installer ensuite s-nail sur Graylog
+### 5. Installation et Configuration de `s-nail`
+
+1.  Installez `s-nail` sur Graylog :
 
 ```bash
 apt install s-nail
 ```
 
-Puis créer un fichier de configuration 
+2.  Créez le fichier de configuration `~/.mailrc` pour l'envoi d'e-mails de test (remplacez les valeurs entre guillemets) :
 
 ```bash
 cat > ~/.mailrc <<EOF
@@ -530,6 +594,14 @@ set smtp-auth-password="mot_de_passe_de_l’application"
 set from="votre_mail@gmail.com"
 EOF
 ```
+
+3. Testez l'envoi d'un mail :
+
+```bash
+echo "Test d’envoi depuis le serveur Graylog" | s-nail -s "Test SMTP" votre_mail@gmail.com
+```
+
+4. Vous devriez reçevoir un mail `Test SMTP`
 
 
 
