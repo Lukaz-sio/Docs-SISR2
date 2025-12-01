@@ -10,17 +10,17 @@ Ce document détaille les étapes de configuration système, d'installation des 
 
 1.  Configurer l'IP de la machine Debian et modifier son nom :
 
-    ```bash
-    nano /etc/network/interfaces
-    ```
+```bash
+nano /etc/network/interfaces
+```
 
 ### 1.2. Configuration du Fuseau Horaire
 
 1.  Appliquer le fuseau horaire **Europe/Paris** :
 
-    ```bash
-    timedatectl set-timezone Europe/Paris
-    ```
+```bash
+timedatectl set-timezone Europe/Paris
+```
 
 ### 1.3. Configuration et Synchronisation NTP
 
@@ -28,28 +28,28 @@ Nous synchronisons l’horloge avec le serveur de l’université de Rennes2, av
 
 1.  Éditez le fichier `/etc/systemd/timesyncd.conf` et paramétrez les serveurs de temps :
 
-    ```bash
-    nano /etc/systemd/timesyncd.conf
-    ```
+```bash
+nano /etc/systemd/timesyncd.conf
+```
 
-    ```ini
-    [Time]
-    NTP=ntp.univ-rennes2.fr
-    FallbackNTP=0.debian.pool.ntp.org 1.debian.pool.ntp.org 2.debian.pool.ntp.org 3.debian.pool.ntp.org
-    ```
+```ini
+[Time]
+NTP=ntp.univ-rennes2.fr
+FallbackNTP=0.debian.pool.ntp.org 1.debian.pool.ntp.org 2.debian.pool.ntp.org 3.debian.pool.ntp.org
+```
 
 2.  Définir le service NTP comme actif :
 
-    ```bash
-    timedatectl set-ntp true
-    ```
+```bash
+timedatectl set-ntp true
+```
 
 3.  Vérifiez la synchronisation (peut prendre quelques minutes) :
 
-    ```bash
-    timedatectl
-    timedatectl timesync-status
-    ```
+```bash
+timedatectl
+timedatectl timesync-status
+```
 
 ### 1.4. Mise à Jour du Système
 
