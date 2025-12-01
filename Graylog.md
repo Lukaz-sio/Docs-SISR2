@@ -552,9 +552,9 @@ Sur Stormshield, créer une nouvelle règle pour laisser passer SMTP
 Dans security policy, créer une règle de filtering
 
 
-
+---
 |ON   |   PASS    |    ANY  |   ANY   |  submission|
-
+---
 
 
 tester la connexion au serveur SMTP avec telnet
