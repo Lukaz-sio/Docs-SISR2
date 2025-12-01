@@ -220,43 +220,42 @@ Accéder à l'interface web de graylog http://172.16.0.6:9000 (172.16.0.6 étant
 login : admin
 MDP : Rootsio2017
 
-# Importer des logs 
+# 💻 Documentation Graylog : Centralisation des Logs
 
-Avant l’import d’un fichier logs de test, Il y a trois étapes à accomplir :
-la création d'un Input pour créer un point d'entrée permettant pour l’arrivée des logs ;
-la création d'un nouvel index pour stocker et indexer tous les journaux ;
-la création d'un Stream pour router les journaux reçus par Graylog vers le nouvel Index.
+Cette documentation couvre les étapes nécessaires pour centraliser les logs Windows, Linux et Stormshield vers un serveur Graylog.
 
-Création d’un « input » dans Graylog
-Sous l’interface web de Graylog, allez dans le menu System > Inputs.
+---
 
+## 1. ⚙️ Importer des Logs de Test (Fichier `logs.txt`)
 
-Choisissez Raw/Plaintext TCP puis Launch new input.
-Entrez le titre Graylog_TCP_test_Linux et laissez les autres paramètres par défaut :
+Avant l’import d’un fichier logs de test, trois étapes sont nécessaires : la création d'un **Input**, d'un **Index**, et d'un **Stream**.
 
-Validez. Graylog est maintenant en écoute sur son port 5555.
+### 1.1. Création de l’Input TCP (Point d'Entrée)
 
+1.  Sous l’interface web de Graylog, allez dans le menu **System > Inputs**.
+2.  Choisissez **Raw/Plaintext TCP** puis **Launch new input**.
+3.  Entrez le titre **`Graylog_TCP_test_Linux`**. Laissez les autres paramètres par défaut.
+4.  Validez. Graylog écoute sur le port **`5555`**.
 
-Création d’un « index» dans Graylog
-Cela permet de ne pas mélanger ces logs d'exercice avec d'autres.
-Sur Graylog, cliquez sur System > Indices > Create index set. Choisissez le template 7-days hot.
-Entrez les éléments ci-contre pour identifier ces logs :
+### 1.2. Création de l’Index (Stockage)
 
-Création des Streams (flux de logs)
-L’objectif est de créer un flux de logs correspondant à l’input créée.
+1.  Sur Graylog, cliquez sur **System > Indices > Create index set**.
+2.  Choisissez le template **7-days hot**.
+3.  Entrez les éléments d'identification pour ces logs (ex: `web-test`).
 
-Allez dans Streams → Create Stream. Entrez un nom et retrouvez l’index créé précédemment :
+### 1.3. Création et Liaison du Stream (Routage)
 
+1.  Allez dans **Streams → Create Stream**.
+2.  Nommez le Stream (ex: `web-test`) et liez-le à l'Index créé précédemment.
+3.  Sur la ligne du Stream créé, cliquez sur **More** puis **Manage rules**.
+4.  Ajoutez une règle : Type **"match input"** et sélectionnez l'Input **`Graylog_TCP_test_Linux`**.
+5.  Validez avec le bouton **"Create Rule"**.
 
-Sur la ligne du Stream créé, cliquez sur More puis Manage rules. Choisissez le type "match input" et sélectionnez l'Input Graylog_TCP_test_Linux. Validez avec le bouton "Create Rule".
+### 1.4. Import des Logs via Script Batch
 
+Copiez ce script dans un fichier **`script.bat`** et exécutez-le depuis le dossier contenant votre fichier `logs.txt` (nécessite l'outil `ncat` de Nmap).
 
-
-Ainsi, tous les messages à destination de notre nouvel Input seront envoyés dans l'Index web-test.
-
-Import des logs
-A partir de la machine physique Windows 11, nous allons envoyer le fichier de logs au serveur Graylog avec la commande ncat en utilisant un script. Copiez-collez le script ci-dessous dans un fichier script.bat. Enregistrez-le dans le dossier où se situe le fichier logs.txt. Placez vous en console cmd et exécutez le.
-
+```batch
 @echo off
 set GRAYLOG_HOST=172.16.0.6
 set GRAYLOG_PORT=5555
@@ -264,50 +263,41 @@ set GRAYLOG_PORT=5555
 for /f "delims=" %%l in (logs.txt) do (
     echo %%l | "C:\Program Files (x86)\Nmap\ncat.exe" %GRAYLOG_HOST% %GRAYLOG_PORT%
 )
-
-Sur Graylog, sur le Stream web-test, vous devez voir des logs apparaître. Lors de l’import, ne tenez pas compte du warning éventuel : libnsock ssl_init_helper(): OpenSSL legacy provider failed to load.
-
-# Centraliser les logs : logs Linux
-
-1. Configuration de Graylog pour recevoir les logs
-Avant de pouvoir recevoir des logs depuis un équipement réseau, Vous allez devoir ouvrir une porte
-d’entrée (input) sur Graylog. Ensuite, pour bien organiser les données, on crée un index dédié
-(comme un dossier thématique) et un flux (stream) pour diriger les messages vers ce bon dossier.
-
-· Pour paramétrer le graylog, dans le menu system, créez un input : menu System/inputs >
-Input.
-
-· Choisissez dans le menu déroulant Syslog UDP et cliquez sur Launch new input.
-
-· Nommez votre `Input Graylog_UDP_rsyslog_input`, choisissez le numéro de port 12514, conservez tout le message de log en cochant `store full message ?`, réglez l’heure en séléctionnant la Time Zone `UTC+01:00-Europe/Paris` et le reste laissez par défaut.
-
-· Une fois l’input fait, créez un index pour le stream (flux de log) dans System / Indices nommé `linux-index`
-
-Puis il faut créer le stream dédié : nommé `linux-stream` et mettre `linux-index` dans index Set et cocher `Remove matches from 'Default Stream'`
-
-· Vous devez maintenant lier votre stream à l’Input, pour cela cliquez sur more et rajoutez
-une règle en cliquant sur manage Rules , puis add stream Rule, le type en `match input` et seléctionner l'input créé `Graylog_UDP_rsyslog_input`
-
-Une fois le service démarré et fonctionnel, nous pouvons terminer notre configuration sur le serveur
-web
-
-Installer rsyslog sur le serveur web 
-
-```bash
-apt install rsyslog
 ```
 
-Puis créer un fichier dans rsyslog.d
+## 2. 🐧 Centralisation des Logs Linux (rsyslog)
 
-```bash
-nano /etc/rsyslog.d/1-Linux-graylog
-```
+### 2.1. Configuration de Graylog
 
-et insérer cette ligne : 
+| Composant | Type | Nom | Paramètres Clés |
+| :--- | :--- | :--- | :--- |
+| **Input** | Syslog UDP | `Graylog_UDP_rsyslog_input` | Port : **12514** ; Time Zone : **`UTC+01:00-Europe/Paris`** ; Cochez : **`store full message ?`** |
+| **Index** | N/A | `linux-index` | **System / Indices > Create index set** |
+| **Stream** | N/A | `linux-stream` | Index Set : **`linux-index`** ; Cochez : **`Remove matches from 'Default Stream'`** |
 
-```ini
-*.* @172.16.0.6:12514;RSYSLOG_SyslogProtocol23Format
-```
+**Liaison Stream/Input :** Sur le Stream `linux-stream`, **Manage Rules** > **Add Stream Rule** : Type **`match input`** et sélectionnez **`Graylog_UDP_rsyslog_input`**.
+
+### 2.2. Configuration du Serveur Linux (rsyslog)
+
+1.  Installez `rsyslog` (si ce n'est pas déjà fait) :
+
+    ```bash
+    apt install rsyslog
+    ```
+
+2.  Créez le fichier de configuration :
+
+    ```bash
+    nano /etc/rsyslog.d/1-Linux-graylog
+    ```
+
+3.  Insérez la ligne suivante pour envoyer tous les logs (`*.*`) en UDP (`@`) :
+
+    ```ini
+    *.* @172.16.0.6:12514;RSYSLOG_SyslogProtocol23Format
+    ```
+
+4.  Redémarrez le service Rsyslog.
 
 Voici comment interpréter cette ligne :
 – *.* : signifie qu’on doit envoyer tous les logs Syslog de la machine Linux vers Graylog.
@@ -321,191 +311,149 @@ envoyer à Graylog.
 arriver sur votre serveur Graylog !
 
 
-## ATTENTION, PROBLEME SERVEUR NTP POISON QUI BLOQUE LE SERVEUR DE TEMPS
+## ⚠️ ATTENTION, PROBLEME SERVEUR NTP POISON
 
-Pour régler ça :
+Pour régler ce problème :
 
-sur stormshield, aller dans monitoring -> Tous les journaux -> rechercher la ligne de log qui bloque le serveur ntp de rennes avec comme message : NTP : possible attaque de type poisoning -> clic droit -> Accéder à la configuration des alarmes -> rechercher NTP : possible attaque de type poisoning -> Autoriser ce message
+Sur **Stormshield**, allez dans **Monitoring -> Tous les journaux**. Recherchez la ligne de log qui bloque le serveur ntp de rennes avec le message : **NTP : possible attaque de type poisoning**.
+
+* Faites un **Clic droit** sur la ligne.
+* Sélectionnez **Accéder à la configuration des alarmes**.
+* Recherchez la règle d'alarme pour **NTP : possible attaque de type poisoning**.
+* **Autoriser ce message**.
 
 # Centraliser les logs : logs Windows
 
-1. Configuration de Graylog pour recevoir les logs
-Pour paramétrer le graylog, il est nécessaire de créer un input, un index et un stream.
+### 1. Configuration de Graylog pour recevoir les logs
 
-· Nous allons commencer par créer un input dans Graylog pour les logs de Windows. Il faut
-aller dans System/inputs, choisissez le protocole GELF UDP et nommer le Win_Log_TVC.
+| Composant | Type | Nom | Paramètres Clés |
+| :--- | :--- | :--- | :--- |
+| **Input** | GELF UDP | `Win_Log_TVC` | Port : **12201** |
+| **Index** | N/A | `index_win_log` | **System / Indices > Create index set** |
+| **Stream** | N/A | `stream_win_log` | Index Set : **`index_win_log`** ; Cochez : **`Remove matches from 'default stream'`** |
 
-· Créez l’index et nommer la index_win_log, lui mettre une description.
+**Liaison Stream/Input :** Sur le Stream `stream_win_log`, accédez à **Manage Rules** > **Add Stream Rule** : Type **`match input`** et sélectionnez l'Input **`Win_Log_TVC`**.
 
-Enfin, créer le stream nommé stream_win_log, mettre index_win_log dans Index Set et cocher Remove matches from 'default stream'
- 
-Pour terminer, manage rules du stream et select an input prendre win_log_tvc et add stream rule Type match input et seléctionner win_log_tvc.
+### 2. Configuration de NXLog pour l'envoi des logs à Graylog
 
-2. Configuration de Nxlog pour envoyer les logs à graylog et les analyser
-Par défaut, Windows n'est pas capable d'envoyer ses journaux vers un serveur Graylog (ou
-équivalent) puisque les fonctions de transferts de journaux sont très limitées. Pour répondre à cette
-problématique, nous allons utiliser l'agent NXLog dans sa version communautaire. Il va
-permettre de capturer les journaux sur la machine Windows afin de les router vers le serveur
-Graylog.
+1.  Installez et paramétrez l'agent **NXLog Community Edition** sur le serveur `SRV-WIN1` (fichier `nxlog-ce-3.2.2329.msi`).
+2.  Modifiez le fichier de configuration `C:\Program Files\nxlog\conf\nxlog.conf` en ajoutant les lignes suivantes à la fin :
 
-· En vous aidant du tutoriel à https://www.it-connect.fr/envoyer-les-logs-windows-vers-
-graylog-avec-nxlog/, installez et paramétrez sur le serveur SRV-WIN1, nxlog community
-
-(fichier nxlog-ce-3.2.2329.msi).
-
-B3-Act6-TP2e – Centraliser les logs : logs Windows page 3/6
-· Ouvrez une console en admin PowerShell ISE. Configurez le fichier C :\Program
-Files\nxlog\conf\nxlog.conf en rajoutant ces lignes à la fin du programme :
-# Récupérer les journaux de l'observateur
-d'événements
+```xml
+# Récupérer les journaux de l'observateur d'événements
 <Input in>
-Module im_msvistalog
-<QueryXML>
-<QueryList>
-<Query Id='1'>
-<Select Path='Security'>*</Select>
-</Query>
-</QueryList>
-</QueryXML>
+    Module im_msvistalog
+    <QueryXML>
+        <QueryList>
+            <Query Id='1'>
+                <Select Path='Security'>*</Select>
+            </Query>
+        </QueryList>
+    </QueryXML>
 </Input>
+
 # Déclarer le serveur Graylog (selon input)
 <Extension gelf>
-Module xm_gelf
+    Module xm_gelf
 </Extension>
 <Output graylog_udp>
-Module om_udp
-Host 172.16.0.6
-Port 12201
-OutputType GELF_UDP
+    Module om_udp
+    Host 172.16.0.6
+    Port 12201
+    OutputType GELF_UDP
 </Output>
+
 # Routage des flux in vers out
 <Route 1>
-Path in => graylog_udp
+    Path in => graylog_udp
 </Route>
-Quelques explications s'imposent pour vous aider à comprendre :
-– im_msvistalog : il s'agit du module déclaré comme entrée (Input) pour récupérer les
-journaux dans l'Observateur d'événements de Windows, compatible à partir de Windows
-Server 2008 et Windows Vista. Il est toujours compatible avec les dernières versions, à
-savoir Windows 11 et Windows Server 2025. Pour les versions antérieures à Windows
-Server 2008, utilisez le module "im_mseventlog".
-– om_udp : il s'agit du module déclaré comme sortie (Output graylog_udp). Dans ce bloc,
-vous devez modifier l'adresse IP, car elle correspond au serveur Graylog (172.16.0.6) et
-éventuellement le port. Nous utilisons le type de sortie "GELF_UDP" pour rester cohérent
-vis-à-vis de l'Input déclaré dans Graylog.
-– Route 1 : il s'agit d'une règle « de routage » dans NXLog pour prendre ce qui correspond à
-l'Input "in" (les logs Windows) et les envoyer vers la sortie "graylog_udp", à savoir notre
-Graylog.
-– <Select Path='Security'>*</Select> : sert à modifier l'Input dans la configuration de
-NXLog pour transmettre à Graylog uniquement les événements du journal "Sécurité"
+```
+Sauvegardez les changements et redémarrez le service NXLog (en console PowerShell Admin) :
 
-B3-Act6-TP2e – Centraliser les logs : logs Windows page 4/6
-· Sauvegardez les changements et redémarrez le service NXLog à partir d'une console
-PowerShell ouverte en tant qu'administrateur (ou via la console Services) : Restart-Service
-nxlog
-Si votre configuration ne fonctionne pas, ouvrez le fichier de logs de NXLog dans C:\Program
-Files\nxlog\data\nxlog.log
+```powershell
+Restart-Service nxlog
+```
 
-3. Recevoir des logs dans graylog
-Suite à la configuration de Graylog et de l'agent NXLog sur la machine Windows, les journaux
-doivent désormais être envoyés vers Graylog.
-· Pour le vérifier, cliquez simplement sur "Search" dans le menu de Graylog.
-Vous devriez voir de premiers journaux arriver, ce qui aura pour effet de faire un pic de logs. Je
-vous recommande de cliquer sur le bouton mis en évidence sur l'image ci-dessous pour rafraîchir
-la liste automatiquement toutes les 5 secondes (par défaut).
+### 3. Recevoir des logs dans Graylog
 
-Si vous cliquez sur un log dans la liste, vous pouvez visualiser son contenu. Cela revient à consulter
-le journal à partir de l'Observateur d'événements de Windows.
-Les journaux étant stockés et indexés dans Graylog, la puissance de l'outil réside dans sa fonction
-de recherche. Vous pouvez rédiger un filtre dans la zone de saisie située à droite de la loupe.
-Par exemple, voici comment filtrer les événements pour afficher uniquement ceux dont l'ID
-est 4776 ou 4771. Ceci permet d'identifier les tentatives de connexion infructueuses sur un
-ou plusieurs serveurs. Pour que ces événements soient générés, vous devez ajuster la stratégie
-d'audit de Windows.
+1. Cliquez sur "Search" dans le menu de Graylog pour vérifier l'arrivée des journaux.
 
-B3-Act6-TP2e – Centraliser les logs : logs Windows page 5/6
+2. Pour filtrer les événements (ex: tentatives de connexion), utilisez :
 
-· Pour cela créez la GPO « audit » suivante sur le domaine de contrôle :
+```plaintext
+EventID:4776 OR EventID:4771
+```
 
-· Ouvrez une console CMD et forcez l’application de cette gpo : gpupdate /force puis
-vérifiez : gpresult /R
+3. GPO d'audit : Créez la GPO « audit » sur le domaine de contrôle pour générer ces événements.
 
-4. Génération de logs d’authentification avec une kali
-· Démarrez une VM Kali Linux dans le LAN.
-Pour générer des tentatives de connexion, nous allons pour cela utiliser Kerbrute :
+4. Ouvrez une console CMD et forcez l’application de cette GPO :
 
-Kerbrute est un outil d’énumération et d’attaque Kerberos, utilisé principalement dans des audits
-de sécurité Active Directory. Il est écrit en GO et est très rapide car il ne dépend pas de
-l’authentification NTLM ou LDAP, mais interagit directement avec le protocole Kerberos (port
-88/UDP).
+```powershell
+gupdate /force
+```
 
-B3-Act6-TP2e – Centraliser les logs : logs Windows page 6/6
-Kerberos est un protocole d’authentification basé sur des tickets chiffrés permettant de prouver
-l’identité d’un utilisateur sans envoyer son mot de passe en clair sur le réseau :
-– Un client demande un TGT (Ticket Granting Ticket) au contrôleur de domaine (KDC) en
-prouvant son identité via la pré-authentification.
-– Avec ce TGT, il demande ensuite un ticket de service pour accéder à une ressource (serveur,
-partage, application...).
-– Les tickets sont chiffrés à l’aide de clés secrètes afin d’empêcher l’usurpation d’identité.
-– Kerberos permet une authentification sécurisée et centralisée dans les environnements
-Windows (Active Directory).
-Kerbrute n’effectue que la première étape, la demande du ticket au contrôleur de domaine. Il ne
-demande ensuite aucun service.
-· Dans la Kali, téléchargez Kerbrute à l’adresse
-https://github.com/ropnop/kerbrute/releases/tag/v1.0.3. Rennomez le fichier kerbrute et
-donnez à tous les utilisateurs les droits d’exécution.
+### 4. Génération de logs d’authentification avec une Kali (Kerbrute)
+
+1. Dans la Kali, téléchargez Kerbrute à l’adresse `https://github.com/ropnop/kerbrute/releases/tag/v1.0.3`. Renommez le fichier `kerbrute` et donnez à tous les utilisateurs les droits d’exécution :
 
 ```bash
 chmod 777 kerbrute
 ```
 
-· Pour déterminer un mot de passe de l’utilisateur par défaut de Windows AD, nous allez taper
-cette commande en console :
+2. Pour déterminer un mot de passe de l’utilisateur par défaut de Windows AD, tapez cette commande en console :
 
 ```bash
 kerbrute bruteuser -d sodecaf.local --dc 172.16.0.1 /usr/share/sqlmap/data/txt/wordlist.txt administrateur 
 ```
 
-· Puis nous allons ouvrir avec le mot de passe trouvé, une ouverture du bureau à distance
-Windows depuis la kali :
+3. Puis ouvrez une ouverture du bureau à distance Windows depuis la Kali avec le mot de passe trouvé :
 
+```bash
 xfreerdp3 /u:"sodecal.local\Administrateur" /p:"Rootsio2017" /v:172.16.0.1 /cert:ignore
+```
 
-· Observez les logs. Faites un filtre avec EventID : 4776 (NTLM bruteforce) ou EventID : 4771
-(Password spraying bruteforce).
+4. Observez les logs. Faites un filtre avec `EventID : 4776` (NTLM bruteforce) ou `EventID : 4771` (Password spraying bruteforce).
 
-# Centraliser les logs : logs Stormshield
 
-1. L’envoi des logs Stormshield vers Graylog
-· Dans le menu Configuration > Système > Configuration, ajoutez le serveur NTP de
-l’université de Rennes 2 (ntp.univ-rennes2.fr).
-· Dans le menu Configuration > Notifications > Traces – Syslog IPFIX > Syslog, configurez le
-Stormshield afin qu’ils envoient des logs au format syslog au serveur Graylog. Vous utiliserez
-le port personnalisé UDP 1514.
+## 4. 🛡️ Centralisation des Logs Stormshield
 
-2. La récupération et l’exploitation des log sur Graylog
-· Créez une nouvelle « input » Stormshield_UDP qui écoute sur le port UDP 1514, en utilisant
-le protocole syslog.
-· Créez un index Index_Stormshield utilisant un template par défaut.
-· Créez enfin un nouveau « Streams » Stormshield qui utilise cet index et qui répertorie tous
-les logs qui « match » avec l’input Stormshield_UDP.
-Les logs du Stormshield apparaissent dans le Stream créé :
+### 4.1. Configuration de l’envoi des logs Stormshield vers Graylog
 
-B3-Act6-TP2f – Centraliser les logs : logs Stormshield page 3/3
+1.  Dans le menu **Configuration > Système > Configuration** sur Stormshield, ajoutez le serveur NTP de l’université de Rennes 2 (`ntp.univ-rennes2.fr`).
+2.  Dans le menu **Configuration > Notifications > Traces – Syslog IPFIX > Syslog**, configurez le Stormshield pour qu’il envoie des logs au format syslog au serveur Graylog.
+3.  Utilisez le port personnalisé **UDP `1514`**.
 
-3. Utilisation d’un modèle
-Vous allez utiliser un modèle, appelé « content pack » sur Graylog, afin d’importer, de parser et de
-créer un dashboard pour les logs du Stormshield.
-· Utilisez le site
-https://github.com/s0p4L1n3/Graylog_Content_Pack_Stormshield_Firewall/blob/main/REA
-DME.md pour la mise en place de ce content pack. Modifiez le nom du pare-feu dans le
-fichier json téléchargé, en remplaçant firewall.lab.lan par VMSNSX09K0639A9.
-· Importez ce content pack sur Graylog et installez-le. Un nouvel Input, un nouveau Stream
-et un nouveau Dashboard sont créés.
+### 4.2. Configuration de la récupération et l’exploitation des logs sur Graylog
 
-4. Analyse des journaux
-· Revenez l’activité sur la mise en place de l’IPS du Stormshield. Retrouvez sur Graylog les
-logs correspondants aux différentes attaques menées avec la Kali. Si besoin, modifiez le
-Dashboard.
+| Composant | Type | Nom | Paramètres Clés |
+| :--- | :--- | :--- | :--- |
+| **Input** | Syslog UDP | `Stormshield_UDP` | Port : **1514** |
+| **Index** | N/A | `Index_Stormshield` | Utiliser un template par défaut. |
+| **Stream** | N/A | `Stormshield` | Index Set : **`Index_Stormshield`** |
+
+**Liaison Stream/Input :** Sur le Stream `Stormshield`, **Manage Rules** > **Add Stream Rule** : Type **`match input`** et sélectionnez **`Stormshield_UDP`**.
+
+### 4.3. Utilisation d’un Modèle (Content Pack)
+
+Vous utiliserez un Content Pack pour importer, parser et créer un dashboard pour les logs Stormshield.
+
+1.  Consultez la documentation : `https://github.com/s0p4L1n3/Graylog_Content_Pack_Stormshield_Firewall/blob/main/README.md`.
+2.  Modifiez le fichier JSON téléchargé en remplaçant `firewall.lab.lan` par l'identifiant de votre pare-feu : **`VMSNSX09K0639A9`**.
+3.  Importez et installez ce Content Pack sur Graylog.
+
+---
+
+## 5. ⚠️ Annexe : Correction NTP Poisoning
+
+### 5.1. Résolution du Blocage Serveur NTP
+
+Pour régler le problème **NTP : possible attaque de type poisoning** sur Stormshield :
+
+* Sur **Stormshield**, allez dans **Monitoring -> Tous les journaux**.
+* Recherchez la ligne de log qui bloque le serveur NTP.
+* Faites un **Clic droit** sur la ligne, puis sélectionnez **Accéder à la configuration des alarmes**.
+* Recherchez la règle d'alarme pour **NTP : possible attaque de type poisoning**.
+* **Autoriser ce message**.
 
 # Centraliser les logs : alertes par email
 
@@ -583,4 +531,6 @@ set smtp-auth-password="mot_de_passe_de_l’application"
 set from="votre_mail@gmail.com"
 EOF
 ```
+
+
 
