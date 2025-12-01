@@ -552,7 +552,7 @@ Sur Stormshield, créer une nouvelle règle pour laisser passer SMTP
 Dans security policy, créer une règle de filtering
 
 
-| Colonne 1 | Colonne 2 | Colonne 3 | Colonne 4 | Colonne 5 |
+| Status | Action | Source | Destination | Dest. Port |
 | :---: | :---: | :---: | :---: | :---: |
 | ON | PASS | ANY | ANY | submission |
 
