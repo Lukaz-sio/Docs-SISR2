@@ -13,8 +13,7 @@ Pour appliquer le fuseau horaire Europe/Paris sur votre machine Debian:
 timedatectl set-timezone Europe/Paris
 ``` 
 
-Nous allons synchroniser l’horloge de nos serveurs avec un serveur de temps de l’université de Rennes2 : ntp.univ-
-rennes2.fr. En cas de défaillance de ce serveur de temps, nous utiliserons des serveurs du pool.ntp.org.
+Nous allons synchroniser l’horloge de nos serveurs avec un serveur de temps de l’université de Rennes2 : ntp.univ-rennes2.fr. En cas de défaillance de ce serveur de temps, nous utiliserons des serveurs du pool.ntp.org.
 
 Éditez le fichier /etc/systemd/timesyncd.conf et paramétrez le serveur de temps utilisé :
 
