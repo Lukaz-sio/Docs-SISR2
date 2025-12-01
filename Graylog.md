@@ -603,5 +603,135 @@ echo "Test d’envoi depuis le serveur Graylog" | s-nail -s "Test SMTP" votre_ma
 
 4. Vous devriez reçevoir un mail `Test SMTP`
 
+# 📧 Centraliser les logs : alertes par email
 
+### 1. Configuration du Compte Google (Mot de passe d'application)
+
+1.  Aller sur son compte gmail, cliquer sur sa photo de profil, aller dans **`Gérer votre compte Google`** puis dans **`Sécurité`** (ou `Sécurité et connexion`).
+2.  Rechercher **`Mots de passe des applications`** (généralement dans la section "Comment vous connecter à Google").
+3.  Mettre le nom de l'application **`graylog`** et **copier le mot de passe** généré dans un bloc-notes en enlevant les espaces.
+
+### 2. Configuration du Serveur Graylog (Email transport)
+
+1.  Sur la machine Graylog, éditer le fichier de configuration :
+
+    ```bash
+    nano /etc/graylog/server/server.conf
+    ```
+
+2.  **Décommenter et modifier** la partie `Email transport` :
+
+    ```ini
+    transport_email_enabled = true
+    transport_email_hostname = smtp.gmail.com
+    transport_email_port = 587
+    transport_email_use_auth = true
+    transport_email_auth_username = adresse mail
+    transport_email_auth_password = secret
+    transport_email_from_email = adresse mail
+    transport_email_socket_connection_timeout = 10s
+    transport_email_socket_timeout = 10s
+    ```
+    *(Remplacez `adresse mail` par votre adresse Gmail et `secret` par le mot de passe d'application.)*
+
+3.  Décommenter les lignes pour **TLS** et l'**URL de l'interface web** :
+
+    ```ini
+    transport_email_use_tls = true
+
+    transport_email_web_interface_url = [http://172.16.0.6:9000](http://172.16.0.6:9000)
+    ```
+
+4.  Redémarrer le service Graylog :
+
+    ```bash
+    systemctl restart graylog-server.service
+    ```
+
+### 3. Création de la Règle Stormshield pour SMTP
+
+Créez une nouvelle règle de **filtering** dans la **Security Policy** du Stormshield :
+
+| Status | Action | Source | Destination | Dest. Port |
+| :---: | :---: | :---: | :---: | :---: |
+| ON | PASS | ANY | ANY | submission |
+
+### 4. Test de Connexion SMTP
+
+1.  Tester la connexion au serveur SMTP avec `telnet` :
+
+    ```bash
+    telnet smtp.gmail.com 587
+    ```
+
+2.  Le résultat doit être : **`Connected to smtp.gmail.com`**.
+
+### 5. Installation et Configuration de `s-nail`
+
+1.  Installer `s-nail` sur Graylog :
+
+    ```bash
+    apt install s-nail
+    ```
+
+2.  Créer un fichier de configuration pour les tests d'envoi :
+
+    ```bash
+    cat > ~/.mailrc <<EOF
+    set mta=smtp://smtp.gmail.com:587
+    set smtp-use-starttls
+    set smtp-auth=login
+    set smtp-auth-user="votre_mail@gmail.com"
+    set smtp-auth-password="mot_de_passe_de_l’application"
+    set from="votre_mail@gmail.com"
+    EOF
+    ```
+
+---
+
+## 5. 📧 Configuration de l'Alerte SSH Échouée (Suite)
+
+### 5.1. A. Créer un Nouveau Stream pour les Erreurs SSH
+
+1.  Cliquez sur **"Streams"** puis créez un nouveau Stream, nommez-le par exemple **"Erreurs de connexion SSH"**.
+2.  Sélectionnez l'index approprié (ex: **"Linux Index"**).
+
+3.  **Définir les Règles du Stream :** Cliquez sur **"More"**, puis **"Manage Rules"** et **"Add stream rule"**.
+
+| Type | Champ | Valeur |
+| :--- | :--- | :--- |
+| **Message must contain** | `message` | `Failed password` |
+| **Message must contain** | `application_name` | `sshd` |
+
+4.  Validez avec **"I'm done!"** et cliquez sur le bouton **"Paused"** pour rendre le Stream **actif**.
+
+### 5.2. B. Créer un Nouveau Type de Notification
+
+1.  Dans le menu **"Alerts"**, allez dans l'onglet **"Notifications"** et cliquez sur **"Create notification"**.
+2.  Donnez un nom (ex: **"Notification - Erreur connexion SSH - Linux"**) et choisissez le type **"Email Notification"**.
+3.  Définissez le(s) destinataire(s) via **"Email recipient(s)"**.
+4.  Cliquez sur **"Execute test notification"** pour valider la configuration e-mail.
+
+### 5.3. C. Créer une Nouvelle Alerte (Event Definition)
+
+1.  Dans la section **"Alerts"**, allez dans **"Event Definitions"** et cliquez sur **"Create event definition"**.
+2.  Nommez l'alerte (ex: **"Erreur connexion SSH - Linux"**).
+3.  À l'étape **"Condition"**, choisissez **"Filter & Aggregation"**.
+
+4.  **Configuration du Filtre :**
+
+| Paramètre | Valeur |
+| :--- | :--- |
+| **Search query** | `Failed password` |
+| **Streams** | **"Erreur de connexion SSH"** |
+| **Search within the last** | 1 minute |
+| **Execute search every** | 1 minute |
+
+5.  Passez l'étape **"Fields"**. À l'étape **"Notifications"**, sélectionnez le modèle de notification créé (ex: "Notification - Erreur connexion SSH - Linux") et **"Add notification"**.
+6.  Cliquez sur **"Summary"** et validez avec **"Create event definition"**.
+
+### 5.4. D. Tester l'Alerte
+
+1.  Simulez une connexion SSH en échec sur un serveur Linux pour déclencher l'alerte.
+2.  Un e-mail doit arriver dans la minute, contenant le lien **"Alert Replay"** pour l'analyse dans Graylog.
 
