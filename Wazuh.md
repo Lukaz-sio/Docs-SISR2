@@ -1,53 +1,94 @@
-# INSTALLATION DE WAZUH 
+# 🛡️ Installation de DVWA et Préparation pour Wazuh
 
-Installation du serveur web SRV-WEB
-Dans un premier temps, nous allons installer une VM SRV-WEB hébergeant une application web de test, DVWA qui
-signifie "Damn Vulnerable Web Application". DVWA est intentionnellement vulnérable, utilisée dans le domaine de
-la cybersécurité pour s'entraîner aux tests d'intrusion et pour apprendre à sécuriser les applications web. Développée
-en PHP avec une base de données MySQL, elle permet aux professionnels de la sécurité, aux étudiants et aux
-développeurs de simuler des attaques courantes telles que les injections SQL, le Cross-Site Scripting (XSS) et bien
-d'autres.
-· Importez une VM Debian. Renommez la et configurez ces paramètres IP.
-· Vérifiez que votre serveur web est synchronisé sur le bon fuseau horaire.
-timedatectl
-timedatectl set-timezone Europe/Paris # si besoin
-· Synchronisez votre serveur web sur un serveur NTP, dans le fichier /etc/systemd/timesyncd.conf.
-[Time]
-NTP=ntp.univ-rennes2.fr
-· Activez NTP, redémarrez le service et vérifiez la synchronisation.
-timedatectl set-ntp true
-systemctl restart systemd-timesyncd.service
-timedatectl timesync-status
+Ce document détaille l'installation de la machine hôte **SRV-WEB** (sous Debian) et le déploiement de l'application web vulnérable **DVWA** (Damn Vulnerable Web Application), ainsi que la configuration horaire nécessaire avant l'installation de l'agent Wazuh.
 
-B3-Act7-TP1 Mise en œuvre d’un SIEM - WAZUH page 4/12
-· Utilisez le script ci-dessous pour l’installation de DVWA. Laissez tous les paramètres par défaut. Appuyez sur
-ENTREE sans entrez de mot de passe.
+---
 
-```bash
-apt install curl
+## 1. ⚙️ Installation du Serveur Web (SRV-WEB)
 
-bash -c "$(curl --fail --show-error --silent --location https://raw.githubusercontent.com/IamCarron/DVWA-
-Script/main/Install-DVWA.sh)"
-```
+### 1.1. Configuration de Base de la VM
 
-Le script installe les paquets nécessaires à l’hébergement du site (apache2, mariadb-server, php) et l’application web
-DVWA. Ne rentrez pas de mot de passe pendant l’installation, appuyez simplement sur Entrée.
-· Vérifiez à partir d’un client, par exemple la Kali, que vous accédez à la page DVWA à l’adresse
-http://192.168.0.1/DVWA
+1.  Importez une VM Debian, renommez-la et configurez son adresse IP.
+2.  Vérifiez et appliquez le fuseau horaire **Europe/Paris** si nécessaire :
 
-Username : admin
-Password :password
+    ```bash
+    timedatectl
+    timedatectl set-timezone Europe/Paris
+    ```
 
+### 1.2. Configuration et Synchronisation NTP
 
-# Installation de WAZUH
+La synchronisation horaire est essentielle pour la corrélation des logs par Wazuh.
 
-· Importez une VM Ubuntu 22.04 server. Attribuez 4Go de RAM à cette machine. Renommez cette VM SRV-
-WAZUH.
+1.  Éditez le fichier de configuration du service de temps :
 
-· Ubuntu utilise netplan pour la configuration IP des interfaces. Créez un fichier /etc/netplan/99_config.yaml et
-suivez l’exemple ci-dessous pour la configuration. Attention à respecter les indentations :
+    ```bash
+    nano /etc/systemd/timesyncd.conf
+    ```
 
-**SANS VLAN**
+2.  Ajoutez ou modifiez la section `[Time]` pour utiliser le serveur NTP de l'université de Rennes2 :
+
+    ```ini
+    [Time]
+    NTP=ntp.univ-rennes2.fr
+    ```
+
+3.  Activez le service NTP, redémarrez-le et vérifiez la synchronisation :
+
+    ```bash
+    timedatectl set-ntp true
+    systemctl restart systemd-timesyncd.service
+    timedatectl timesync-status
+    ```
+
+---
+
+## 2. 🌐 Installation de DVWA (Damn Vulnerable Web Application)
+
+DVWA est une application PHP/MySQL vulnérable utilisée pour les tests d'intrusion. Le script ci-dessous installera les dépendances nécessaires (`apache2`, `mariadb-server`, `php`).
+
+1.  Installez `curl` :
+
+    ```bash
+    apt install curl
+    ```
+
+2.  Exécutez le script d'installation de DVWA. **Appuyez sur ENTRÉE sans entrer de mot de passe** lorsque demandé pour la configuration de MariaDB.
+
+    ```bash
+    bash -c "$(curl --fail --show-error --silent --location [https://raw.githubusercontent.com/IamCarron/DVWA-Script/main/Install-DVWA.sh](https://raw.githubusercontent.com/IamCarron/DVWA-Script/main/Install-DVWA.sh))"
+    ```
+
+### 2.1. Vérification de l'Accès
+
+1.  Vérifiez l'accès à la page DVWA à partir d’un client (ex: Kali Linux) via l'URL (adaptez l'IP) : **`http://192.168.0.1/DVWA`**.
+
+| Rôle | Valeur |
+| :--- | :--- |
+| **Username** | `admin` |
+| **Password** | `password` |
+
+# 🛡️ Installation de WAZUH (SRV-WAZUH)
+
+Cette section couvre la préparation du serveur **SRV-WAZUH** (sous Ubuntu 22.04) en définissant ses paramètres matériels, sa configuration réseau (avec ou sans VLAN via Netplan), et sa synchronisation horaire NTP.
+
+---
+
+## 1. 🖥️ Préparation de la Machine Virtuelle
+
+1.  Importez une VM **Ubuntu 22.04 Server**.
+2.  Attribuez **4 Go de RAM** à cette machine.
+3.  Renommez cette VM **`SRV-WAZUH`**.
+
+---
+
+## 2. 🌐 Configuration Réseau avec Netplan
+
+Ubuntu utilise **Netplan** pour gérer la configuration IP. Vous devez créer le fichier `/etc/netplan/99_config.yaml` et respecter scrupuleusement l'indentation YAML.
+
+### 2.1. Configuration Statique Standard (SANS VLAN)
+
+Utilisez cet exemple pour une configuration statique simple sur l'interface **`ens33`** (adaptez le nom de l'interface si nécessaire) :
 
 ```yml
 network:
@@ -63,7 +104,6 @@ network:
       nameservers:
         search: [sodecaf.local]
         addresses: [172.16.0.1, 8.8.8.8]
-```
 
 **AVEC VLAN**
 
@@ -154,48 +194,85 @@ créez une nouvelle règle dans Stormshield :
 
 Maintenant que votre installation de Wazuh est prête, vous pouvez commencer à déployer l’agent Wazuh.
 
-Utilisez la partie Wazuh agent de la documentation pour installation de l’agent Wazuh sur la VM SRV-WIN1 :
-https://documentation.wazuh.com/current/installation-guide/wazuh-agent/index.html. 
+Dans Wazuh, allez dans `Deploy New Agent`, selectionner votre OS et mettez l'adresse IP de votre Wazuh dans Server address. Pas besoin de mettre un agent name.
 
-Installez le fichier wazuh-agent.msi
+Copier la commande donnée dans la partie 4 et 5.
 
-https://packages.wazuh.com/4.x/windows/wazuh-agent-4.14.1-1.msi
+Pour Debian : 
 
-Ouvrez Powershell en administrateur, allez dans le dossier où le fichier wazuh-agent s'est installé et executez cette commande en remplacant l'IP par celle de votre WAZUH
+```bash
+wget https://packages.wazuh.com/4.x/apt/pool/main/w/wazuh-agent/wazuh-agent_4.12.0-1_amd64.deb && sudo WAZUH_MANAGER='172.16.0.7' dpkg -i ./wazuh-agent_4.12.0-1_amd64.deb
+```
+
+Redémarrez les services :
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable wazuh-agent
+sudo systemctl start wazuh-agent
+```
+
+Pour Windows, lancez powershell en administrateur :
 
 ```powershell
-.\wazuh-agent-4.14.1-1.msi /q WAZUH_MANAGER="172.16.0.7"
+Invoke-WebRequest -Uri https://packages.wazuh.com/4.x/windows/wazuh-agent-4.12.0-1.msi -OutFile $env:tmp\wazuh-agent; msiexec.exe /i $env:tmp\wazuh-agent /q WAZUH_MANAGER='172.16.0.7' 
 ```
 
-démarrez l'agent wazuh :
+Démarrer le service :
 
 ```powershell
-Start-Service wazuhsvc
+NET START WazuhSvc
 ```
 
-Ensuite Installez l'agent sur le serveur web 
+Vérifiez que les hôtes apparaîssent sur le dashboard de Wazuh.
 
-https://documentation.wazuh.com/current/installation-guide/wazuh-agent/wazuh-agent-package-linux.html
+# Test d’attaque brute force sur SSH
+
+Sur le serveur Wazuh, ouvrez le fichier `/var/ossec/etc/ossec.conf` et vérifiez la présence des lignes ci-dessous :
+
+```xml
+<command>
+<name>firewall-drop</name>
+<executable>firewall-drop</executable>
+<timeout_allowed>yes</timeout_allowed>
+</command>
+```
+
+Dans ce même fichier, il est possible d’ajouter des réponses actives, qui configurent des réponses automatiques à des
+événements relevés par Wazuh.
+
+Attention : la commande firewall-drop utilise iptables. Le paquet iptables doit donc être installé sur la machine agent (ici le serveur web).
 
 ```bash
-apt-get install gnupg apt-transport-https
-curl -s https://packages.wazuh.com/key/GPG-KEY-WAZUH | gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/wazuh.gpg --import && chmod 644 /usr/share/keyrings/wazuh.gpg
-echo "deb [signed-by=/usr/share/keyrings/wazuh.gpg] https://packages.wazuh.com/4.x/apt/ stable main" | tee -a /etc/apt/sources.list.d/wazuh.list
-apt-get update
+apt install iptables
 ```
 
-Déployez l'agent wazuh : 
+Ajoutez alors le bloc ci-dessous au fichier /var/ossec/etc/ossec.conf :
+
+```xml
+<active-response>
+<command>firewall-drop</command>
+<location>local</location>
+<rules_id>5763</rules_id>
+<timeout>180</timeout>
+</active-response>
+```
+
+Enregistrez le fichier modifié. Redémarrez le service wazuh-manager.
+
+Effectuez un test de connectivité de la Kali vers le serveur web.
+
+Sur la Kali Linux, lancez l’attaque par force brute du service SSH :
 
 ```bash
-WAZUH_MANAGER="172.16.0.7" apt-get install wazuh-agent
+hydra -t 4 -l etudiant -P /usr/share/wordlists/rockyou.txt.gz 192.168.0.1 ssh
 ```
 
-Redémarrer les services :
+Sur l'interface web de Wazuh, allez dans Threat Hunting puis Events et vérifiez qu'il y a bien un évènement d'attaque `sshd: bruteforce trying to get access to the system` et que l'hôte a bien été bloqué par firewall-drop.
 
-```bash
-systemctl daemon-reload
-systemctl enable wazuh-agent
-systemctl start wazuh-agent
-```
+Sur le dashboard de Wazuh, allez que l’agent du SRV-WEB, puis Threat Hunting et appliquez le filtre rule.id is 5763. L’attaque par brute force a été détectée.
 
-Vérifiez que l’hôte apparaît sur le dashboard de Wazuh.
+Ici une attaque avec l’identifiant MITRE T1110 a été détecté, il s’agit du code attribué par le MITRE pour les attaques de type brute force : https://attack.mitre.org/techniques/T1110/
+– rule_id 5763 est la règle de détection brute force SSH dans Wazuh
+– Elle correspond à la technique MITRE T1110 – Brute Force.
+– L’active response applique automatiquement un blocage temporaire de l’IP attaquante.

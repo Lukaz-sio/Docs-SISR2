@@ -67,20 +67,21 @@ apt upgrade -y
 ```bash
 apt-get install curl lsb-release ca-certificates gnupg2 pwgen
 
-curl -fsSL [https://www.mongodb.org/static/pgp/server-6.0.asc](https://www.mongodb.org/static/pgp/server-6.0.asc) | gpg -o /usr/share/keyrings/mongodb-server-6.0.gpg --dearmor
+curl -fsSL https://www.mongodb.org/static/pgp/server-6.0.asc | sudo gpg -o /usr/share/keyrings/mongodb-server-6.0.gpg --dearmor
 ```
 
 2.  Ajouter le dépôt MongoDB 6.0 (notez que `bullseye` est utilisé pour Debian 12) :
 
 ```bash
-echo "deb [ signed-by=/usr/share/keyrings/mongodb-server-6.0.gpg] [http://repo.mongodb.org/apt/debian](http://repo.mongodb.org/apt/debian) bullseye/mongodb-org/6.0 main" | tee /etc/apt/sources.list.d/mongodb-org-6.0.list
+echo "deb [ signed-by=/usr/share/keyrings/mongodb-server-6.0.gpg] http://repo.mongodb.org/apt/debian bullseye/mongodb-org/6.0 main" | sudo tee /etc/apt/sources.list.d/mongodb-org-6.0.list
 ```
 
 3.  Mise à jour et installation de la dépendance `libssl1.1` (nécessaire pour MongoDB 6.0 sur Debian 12) :
 
 ```bash
 apt update
-wget [http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2.24_amd64.deb](http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2.24_amd64.deb)
+wget http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2.23_amd64.deb
+sudo dpkg -i libssl1.1_1.1.1f-1ubuntu2.23_amd64.deb
 dpkg -i libssl1.1_1.1.1f-1ubuntu2.24_amd64.deb
 ```
 
@@ -114,13 +115,13 @@ systemctl --type=service --state=active | grep mongod
 1.  Ajouter la clé de signature pour les paquets OpenSearch :
 
 ```bash
-curl -o- [https://artifacts.opensearch.org/publickeys/opensearch.pgp](https://artifacts.opensearch.org/publickeys/opensearch.pgp) | gpg --dearmor --batch --yes -o /usr/share/keyrings/opensearch-keyring
+curl -o- https://artifacts.opensearch.org/publickeys/opensearch.pgp | sudo gpg --dearmor --batch --yes -o /usr/share/keyrings/opensearch-keyring
 ```
 
 2.  Ajouter le dépôt OpenSearch 2.x :
 
 ```bash
-echo "deb [signed-by=/usr/share/keyrings/opensearch-keyring] [https://artifacts.opensearch.org/releases/bundle/opensearch/2.x/apt](https://artifacts.opensearch.org/releases/bundle/opensearch/2.x/apt) stable main" | tee /etc/apt/sources.list.d/opensearch-2.x.list
+echo "deb [signed-by=/usr/share/keyrings/opensearch-keyring] https://artifacts.opensearch.org/releases/bundle/opensearch/2.x/apt stable main" | sudo tee /etc/apt/sources.list.d/opensearch-2.x.list
 ```
 
 3.  Mettre à jour la liste des paquets :
@@ -200,8 +201,7 @@ top
 1.  Exécutez les 4 commandes suivantes pour télécharger et installer Graylog Server 6.1 :
 
     ```bash
-    wget [https://packages.graylog2.org/repo/packages/graylog-6.1-repository_latest.deb](https://packages.graylog2.org/repo/packages/graylog-6.1-repository_latest.deb)
-    dpkg -i graylog-6.1-repository_latest.deb
+    wget https://packages.graylog2.org/repo/packages/graylog-6.1-repository_latest.deb    dpkg -i graylog-6.1-repository_latest.deb
     apt-get update
     apt-get install graylog-server
     ```
@@ -639,7 +639,7 @@ echo "Test d’envoi depuis le serveur Graylog" | s-nail -s "Test SMTP" votre_ma
     ```ini
     transport_email_use_tls = true
 
-    transport_email_web_interface_url = [http://172.16.0.6:9000](http://172.16.0.6:9000)
+    transport_email_web_interface_url = http://172.16.0.6:9000
     ```
 
 4.  Redémarrer le service Graylog :
