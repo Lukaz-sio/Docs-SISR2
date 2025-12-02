@@ -130,7 +130,7 @@ créez une nouvelle règle dans Stormshield :
 
 | Status | Action | Source | Destination | Dest. Port |
 | :---: | :---: | :---: | :---: | :---: |
-| ON | PASS | ANY | SRV-WAZUH | submission |
+| ON | PASS | ANY | SRV-WAZUH | 1514, 1515 |
 
 Maintenant que votre installation de Wazuh est prête, vous pouvez commencer à déployer l’agent Wazuh.
 
