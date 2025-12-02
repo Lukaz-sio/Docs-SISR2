@@ -80,8 +80,7 @@ echo "deb [ signed-by=/usr/share/keyrings/mongodb-server-6.0.gpg] http://repo.mo
 
 ```bash
 apt update
-wget http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2.23_amd64.deb
-sudo dpkg -i libssl1.1_1.1.1f-1ubuntu2.23_amd64.deb
+wget http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2.24_amd64.deb
 dpkg -i libssl1.1_1.1.1f-1ubuntu2.24_amd64.deb
 ```
 
@@ -201,7 +200,8 @@ top
 1.  Exécutez les 4 commandes suivantes pour télécharger et installer Graylog Server 6.1 :
 
     ```bash
-    wget https://packages.graylog2.org/repo/packages/graylog-6.1-repository_latest.deb    dpkg -i graylog-6.1-repository_latest.deb
+    wget https://packages.graylog2.org/repo/packages/graylog-6.1-repository_latest.deb    
+    dpkg -i graylog-6.1-repository_latest.deb
     apt-get update
     apt-get install graylog-server
     ```
