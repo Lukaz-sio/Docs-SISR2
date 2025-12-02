@@ -47,6 +47,26 @@ WAZUH.
 · Ubuntu utilise netplan pour la configuration IP des interfaces. Créez un fichier /etc/netplan/99_config.yaml et
 suivez l’exemple ci-dessous pour la configuration. Attention à respecter les indentations :
 
+**SANS VLAN**
+
+```yml
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    ens33:
+      addresses:
+        - 172.16.0.7/24
+      routes:
+        - to: default
+          via: 172.16.0.254
+      nameservers:
+        search: [sodecaf.local]
+        addresses: [172.16.0.1, 8.8.8.8]
+```
+
+**AVEC VLAN**
+
 ```yaml
 network:
   version: 2
