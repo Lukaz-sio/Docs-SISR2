@@ -118,7 +118,7 @@ Ce Travail Pratique (TP) vise à mettre en œuvre une chaîne de cybersécurité
     * Vérifiez la présence de la commande `firewall-drop`[cite: 1143, 1144].
     * Ajoutez le bloc `active-response` pour la règle SSH Brute Force (ID 5763)[cite: 1153].
 
-    ```xml
+```xml
 <command>
   <name>firewall-drop</name>
   <executable>firewall-drop</executable>
@@ -131,7 +131,8 @@ Ce Travail Pratique (TP) vise à mettre en œuvre une chaîne de cybersécurité
   <rules_id>5763</rules_id>  # Règle SSHD brute force trying
   <timeout>180</timeout>  # Bannissement de 180s
 </active-response>
-    ```
+```
+
     * Redémarrez le manager : `systemctl restart wazuh-manager`.
 
 3.  **Attaque (Kali Linux) :**
@@ -157,12 +158,12 @@ Ce Travail Pratique (TP) vise à mettre en œuvre une chaîne de cybersécurité
 
 2.  **Configuration Agent Wazuh pour Teler (SRV-WEB) :**
     * Ajoutez la configuration ci-dessous au fichier `/var/ossec/etc/ossec.conf` pour lire les logs JSON de Teler[cite: 1252].
-    ```xml
+```xml
 <localfile>
   <log_format>syslog</log_format>
   <location>/var/log/teler/output.log</location>
 </localfile>
-    ```
+```
     * Redémarrez l'agent Wazuh : `systemctl restart wazuh-agent`.
 
 3.  **Lancement de Teler (SRV-WEB) :**
@@ -233,7 +234,7 @@ Ce Travail Pratique (TP) vise à mettre en œuvre une chaîne de cybersécurité
 
 3.  **Configuration de la Réponse Active GLPI (SRV-WAZUH) :**
     * Modifiez le fichier `/var/ossec/etc/ossec.conf` pour activer la commande `glpi_ticket` (qui exécute le script `glpi_ticket.sh`) et l'associer à la règle 5763 (SSH Brute Force).
-    ```xml
+```xml
 <command> 
   <name>glpi_ticket</name> 
   <executable>glpi_ticket.sh</executable>
@@ -247,7 +248,7 @@ Ce Travail Pratique (TP) vise à mettre en œuvre une chaîne de cybersécurité
   <rules_id>5763</rules_id>
   <timeout>60</timeout>
 </active-response>
-    ```
+```
     * Redémarrez le manager Wazuh : `systemctl restart wazuh-manager`[cite: 3345].
 
 4.  **Test Final :**
