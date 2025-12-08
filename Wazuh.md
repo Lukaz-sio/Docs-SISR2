@@ -56,7 +56,7 @@ DVWA est une application PHP/MySQL vulnérable utilisée pour les tests d'intrus
 2.  Exécutez le script d'installation de DVWA. **Appuyez sur ENTRÉE sans entrer de mot de passe** lorsque demandé pour la configuration de MariaDB.
 
     ```bash
-    bash -c "$(curl --fail --show-error --silent --location [https://raw.githubusercontent.com/IamCarron/DVWA-Script/main/Install-DVWA.sh](https://raw.githubusercontent.com/IamCarron/DVWA-Script/main/Install-DVWA.sh))"
+    bash -c "$(curl --fail --show-error --silent --location https://raw.githubusercontent.com/IamCarron/DVWA-Script/main/Install-DVWA.sh)"
     ```
 
 ### 2.1. Vérification de l'Accès
@@ -493,7 +493,7 @@ Effectuez les tests suivants dans la console Shell du serveur Wazuh. **Remplacez
     -H 'Content-Type: application/json' \
     -H "Authorization: user_token insérer_ici_votre_user_token" \
     -H "App-Token: insérer_ici_votre_app_token" \
-    '[http://172.16.0.8/apirest.php/initSession?get_full_session=true](http://172.16.0.8/apirest.php/initSession?get_full_session=true)'
+    'http://172.16.0.8/apirest.php/initSession?get_full_session=true'
     ```
 
     * **Note :** Si le test est correct, vous recevrez un `session_token`.
@@ -519,7 +519,7 @@ Effectuez les tests suivants dans la console Shell du serveur Wazuh. **Remplacez
     "itilcategories_id": 2
     }
     }' \
-    [http://172.16.0.8/apirest.php/Ticket](http://172.16.0.8/apirest.php/Ticket)
+    http://172.16.0.8/apirest.php/Ticket
     ```
 
     * Vérifiez la création du ticket sous GLPI.
@@ -531,7 +531,7 @@ Effectuez les tests suivants dans la console Shell du serveur Wazuh. **Remplacez
     -H 'Authorization: user_token insérer_ici_votre_user_token' \
     -H 'App-Token: insérer_ici_votre_app_token' \
     -H 'Session-Token: bk6smoi2cj0mgj7i1p22sinakr' \
-    [http://172.16.0.8/apirest.php/killSession](http://172.16.0.8/apirest.php/killSession)
+    http://172.16.0.8/apirest.php/killSession
     ```
 
 ### Étape 3: Mise en place du Script de Réponse Active
@@ -554,7 +554,7 @@ Effectuez les tests suivants dans la console Shell du serveur Wazuh. **Remplacez
     # Script Active Response Wazuh → GLPI
     # Version améliorée avec logs et mapping gravité → priorité
 
-    GLPI_URL="[http://172.16.0.8/apirest.php](http://172.16.0.8/apirest.php)"
+    GLPI_URL="http://172.16.0.8/apirest.php"
     APP_TOKEN="IbQdjd32WUg5wAJrpQb7ZwnWdyVHLfITNriLrQHy" # À MODIFIER
     USER_TOKEN="wPNzhNzcwZNdabEJFBVzT4xkBg2BnWyZwQhlDWhv" # À MODIFIER
 
@@ -663,7 +663,7 @@ Effectuez les tests suivants dans la console Shell du serveur Wazuh. **Remplacez
 2.  **Redémarrage du service Wazuh Manager** :
 
     ```bash
-    systemctl restart wazuh-manager
+    systemctl restart wazuh-manager.service
     ```
 
 ## 🚀 Vérification et Validation (Attaques/Tests)
@@ -673,10 +673,6 @@ Effectuez les tests suivants dans la console Shell du serveur Wazuh. **Remplacez
 
 2.  **Vérification de la création du ticket** :
     * Vérifiez la bonne création du ticket incident sur GLPI.
-
-## 📚 Conclusion et Références
-
-* **Gestion des tickets incidents** : Connectez-vous avec le compte **SOC-N1** et testez la gestion de ces tickets incidents (réponse, escalade, clôture).
 
 
 

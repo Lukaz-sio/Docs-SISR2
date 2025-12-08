@@ -247,7 +247,7 @@ Modifiez les options suivantes dans le fichier `/etc/graylog/server/server.conf`
 2.  Déclarer l'instance OpenSearch locale :
 
     ```ini
-    elasticsearch_hosts = [http://127.0.0.1:9200](http://127.0.0.1:9200)
+    elasticsearch_hosts = http://127.0.0.1:9200
     ```
 
 3.  Définir le fuseau horaire de l'interface d'administration :
@@ -547,7 +547,7 @@ transport_email_socket_timeout = 10s
 ```ini
 transport_email_use_tls = true
 
-transport_email_web_interface_url = [http://172.16.0.6:9000](http://172.16.0.6:9000)
+transport_email_web_interface_url = http://172.16.0.6:9000
 ```
 
 4.  Redémarrez le service Graylog :
