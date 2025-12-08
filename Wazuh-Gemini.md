@@ -36,52 +36,52 @@ Ce Travail Pratique (TP) vise à mettre en œuvre une chaîne de cybersécurité
 
 ### Étape 1: Installation et Préparation du SRV-WEB (DVWA)
 
-1.  **Importation et Réseau :** Importez la VM Debian et configurez son IP statique (`192.168.0.1/24` en DMZ)[cite: 967, 934].
-2.  **Configuration NTP :** Synchronisez l'horloge sur `Europe/Paris` et le serveur NTP `ntp.univ-rennes2.fr`[cite: 968, 971, 972].
+1.  **Importation et Réseau :** Importez la VM Debian et configurez son IP statique (`192.168.0.1/24` en DMZ).
+2.  **Configuration NTP :** Synchronisez l'horloge sur `Europe/Paris` et le serveur NTP `ntp.univ-rennes2.fr`.
     ```bash
-    timedatectl set-timezone Europe/Paris # si besoin [cite: 970]
+    timedatectl set-timezone Europe/Paris
     # Éditez le fichier /etc/systemd/timesyncd.conf
-    # [Time] [cite: 971]
-    # NTP=ntp.univ-rennes2.fr [cite: 972]
-    timedatectl set-ntp true [cite: 974]
-    systemctl restart systemd-timesyncd.service [cite: 975]
-    timedatectl timesync-status [cite: 976]
+    # [Time]
+    # NTP=ntp.univ-rennes2.fr
+    timedatectl set-ntp true
+    systemctl restart systemd-timesyncd.service
+    timedatectl timesync-status
     ```
 3.  **Installation de DVWA :**
-    * Le script installe Apache2, MariaDB-server et PHP[cite: 984].
+    * Le script installe Apache2, MariaDB-server et PHP.
     ```bash
-    apt install curl [cite: 982]
-    bash -c "$(curl --fail --show-error-silent-location [https://raw.githubusercontent.com/lamCarron/DVWA-Script/main/Install-DVWA.sh](https://raw.githubusercontent.com/lamCarron/DVWA-Script/main/Install-DVWA.sh))" [cite: 983]
-    # Appuyez sur ENTREE sans entrer de mot de passe lors du script[cite: 981, 985].
+    apt install curl
+    bash -c "$(curl --fail --show-error-silent-location https://raw.githubusercontent.com/lamCarron/DVWA-Script/main/Install-DVWA.sh)"
+    # Appuyez sur ENTREE sans entrer de mot de passe lors du script.
     ```
 4.  **Finalisation DVWA :**
-    * Accédez à `http://192.168.0.1/DVWA`[cite: 986].
-    * Connectez-vous avec `Username: admin`, `Password: password`[cite: 990].
-    * Créez la base de données à partir de la page web (`Setup/Reset DB`)[cite: 991, 993].
+    * Accédez à `http://192.168.0.1/DVWA`.
+    * Connectez-vous avec `Username: admin`, `Password: password`.
+    * Créez la base de données à partir de la page web (`Setup/Reset DB`).
 
 ### Étape 2: Installation du Serveur WAZUH (SRV-WAZUH)
 
-1.  **Importation et Réseau :** Importez la VM Ubuntu 22.04 Server (`4Go` de RAM)[cite: 1003].
-2.  **Configuration IP (Netplan) :** Créez le fichier `/etc/netplan/99_config.yaml` pour configurer l'IP statique (`172.16.0.7`)[cite: 1004].
+1.  **Importation et Réseau :** Importez la VM Ubuntu 22.04 Server (`4Go` de RAM).
+2.  **Configuration IP (Netplan) :** Créez le fichier `/etc/netplan/99_config.yaml` pour configurer l'IP statique (`172.16.0.7`).
     ```yaml
-    network: [cite: 1005]
-      version: 2 [cite: 1006]
-      renderer: networkd [cite: 1007]
-      ethernets: [cite: 1008]
-        eth0: [cite: 1009] # Adaptez le nom de l'interface
-          addresses: [cite: 1010]
+    network:
+      version: 2
+      renderer: networkd
+      ethernets:
+        eth0: # Adaptez le nom de l'interface
+          addresses: 
             - 172.16.0.7/24 # Adaptez l'IP si nécessaire
-          routes: [cite: 1012]
-            - to: default [cite: 1013]
+          routes: 
+            - to: default 
               via: 172.16.0.254 # Gateway OPNsense
-          nameservers: [cite: 1015]
+          nameservers: 
             addresses: [172.16.0.1, 1.1.1.1] # SRV-WIN1 et DNS public
     ```
-    * Appliquez la configuration : `netplan apply`[cite: 1021].
-    * Synchronisez le serveur WAZUH sur le même serveur NTP que le serveur web[cite: 1022].
+    * Appliquez la configuration : `netplan apply`.
+    * Synchronisez le serveur WAZUH sur le même serveur NTP que le serveur web.
 3.  **Installation de Wazuh (Manager, Indexer, Dashboard) :**
     ```bash
-    curl -sO [https://packages.wazuh.com/4.12/wazuh-install.sh](https://packages.wazuh.com/4.12/wazuh-install.sh) && sudo bash ./wazuh-install.sh -a [cite: 1024]
+    curl -sO https://packages.wazuh.com/4.12/wazuh-install.sh && sudo bash ./wazuh-install.sh -a
     ```
     * **Notez le mot de passe ADMIN** affiché à la fin de l'installation[cite: 1032].
 4.  **Accès Dashboard :** Accédez à `https://172.16.0.7/`[cite: 1035].
@@ -119,18 +119,18 @@ Ce Travail Pratique (TP) vise à mettre en œuvre une chaîne de cybersécurité
     * Ajoutez le bloc `active-response` pour la règle SSH Brute Force (ID 5763)[cite: 1153].
 
     ```xml
-<command> [cite: 1143]
-  <name>firewall-drop</name> [cite: 1144]
-  <executable>firewall-drop</executable> [cite: 1145]
-  <timeout_allowed>yes</timeout_allowed> [cite: 1146]
-</command> [cite: 1147]
+<command>
+  <name>firewall-drop</name>
+  <executable>firewall-drop</executable>
+  <timeout_allowed>yes</timeout_allowed>
+</command>
 
-<active-response> [cite: 1153]
-  <command>firewall-drop</command> [cite: 1154]
-  <location>local</location> [cite: 1155]
-  <rules_id>5763</rules_id> [cite: 1156] # Règle SSHD brute force trying
-  <timeout>180</timeout> [cite: 1157] # Bannissement de 180s
-</active-response> [cite: 1160]
+<active-response>
+  <command>firewall-drop</command>
+  <location>local</location>
+  <rules_id>5763</rules_id>  # Règle SSHD brute force trying
+  <timeout>180</timeout>  # Bannissement de 180s
+</active-response>
     ```
     * Redémarrez le manager : `systemctl restart wazuh-manager`.
 
@@ -179,7 +179,7 @@ Ce Travail Pratique (TP) vise à mettre en œuvre une chaîne de cybersécurité
 5.  **Attaque (Kali Linux) :**
     * Lancez le scan de vulnérabilité avec Nikto[cite: 1315, 1318].
     ```bash
-    nikto -h [http://192.168.0.1/DVWA](http://192.168.0.1/DVWA)
+    nikto -h http://192.168.0.1/DVWA
     ```
 
 6.  **Vérification (Wazuh Dashboard) :**
