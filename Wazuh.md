@@ -276,3 +276,443 @@ Ici une attaque avec l’identifiant MITRE T1110 a été détecté, il s’agit 
 – rule_id 5763 est la règle de détection brute force SSH dans Wazuh
 – Elle correspond à la technique MITRE T1110 – Brute Force.
 – L’active response applique automatiquement un blocage temporaire de l’IP attaquante.
+
+# Désactivation d’un compte utilisateur Linux
+
+Add the rule below to the Wazuh server /var/ossec/etc/rules/local_rules.xml file:
+
+```xml
+<group name="pam,syslog,">
+  <rule id="120100" level="10" frequency="3" timeframe="120">
+    <if_matched_sid>5503</if_matched_sid>
+    <description>Possible password guess on $(dstuser): 3 failed logins in a short period of time</description>
+    <mitre>
+      <id>T1110</id>
+    </mitre>
+  </rule>
+</group>
+```
+
+Open the Wazuh server /var/ossec/etc/ossec.conf file and verify that a <command> block called disable-account with the following configuration is present within the <ossec_config> block:
+
+```xml
+<command>
+  <name>disable-account</name>
+  <executable>disable-account</executable>
+  <timeout_allowed>yes</timeout_allowed>
+</command>
+```
+
+Add the <active-response> block below to the Wazuh server /var/ossec/etc/ossec.conf configuration file:
+
+```xml
+  <active-response>
+    <disabled>no</disabled>
+    <command>disable-account</command>
+    <location>local</location>
+    <rules_id>120100</rules_id>
+    <timeout>300</timeout>
+  </active-response>
+```
+
+Redémarrez wazuh-manager :
+
+```bash
+sudo systemctl restart wazuh-manager
+```
+
+Creéz 2 utilisateurs sur le serveur Web :
+
+```bash
+sudo adduser user1
+sudo adduser user2
+```
+
+Se connecter sur user1 
+
+```bash
+su user1
+```
+
+Essayer de se connecter au user2 avec le mauvais mot de passe 
+
+```bash
+su user2
+```
+
+Check that the account was successfully locked using the passwd command:
+
+```bash
+sudo passwd --status user2
+```
+
+Output
+
+```bash
+user2 L 02/20/2023 0 99999 7 -1
+```
+
+The L flag indicates the account is locked.
+
+# Détecter des intrusions en utilisant Wazuh et Suricata
+
+Nous allons installer Suricata sur le serveur web SRV-WEB. Il y collectera des informations et les enverra au
+manager Wazuh.
+
+```bash
+apt update
+apt install suricata
+```
+
+· On télécharge ensuite des règles par défaut d’inspection des paquets par suricata :
+
+```bash
+cd /tmp/ && curl -LO https://rules.emergingthreats.net/open/suricata-6.0.10/emerging.rules.tar.gz
+mkdir -p /etc/suricata/rules/
+tar -xvzf emerging.rules.tar.gz && sudo mv rules/*.rules /etc/suricata/rules/
+chmod 640 /etc/suricata/rules/*.rules
+```
+  
+### Étape 1: Configuration Initiale de Suricata 🔧
+
+1.  **Éditer le fichier de configuration de Suricata** (généralement sous `/etc/suricata/suricata.yaml` ou `/etc/suricata/conf.yaml`).
+
+2.  **Mise à jour des variables réseau et des règles** : Assurez-vous que les lignes suivantes reflètent votre environnement.
+
+    ```yaml
+    HOME_NET: "192.168.0.1/24" # Exemple: Mettre ici l'IP ou le CIDR de votre réseau interne
+    EXTERNAL_NET: "any"
+    rule-files:
+    - "*.rules"
+    - "/etc/suricata/rules/*.rules"
+    # Global stats configuration
+    stats:
+    enabled: yes
+    ```
+
+3.  **Configuration de l'interface de capture** : Localisez la section `af-packet` et remplacez **NOM_INTERFACE** par le nom réel de l'interface réseau de **SRV-WEB** (ex : `eth0`, `ens33`).
+
+    ```yaml
+    # Linux high speed capture support
+    af-packet:
+    - interface: NOM_INTERFACE
+    ```
+
+4.  **Redémarrer Suricata** pour appliquer les changements :
+
+    ```bash
+    systemctl restart suricata
+    ```
+
+### Étape 2: Configuration de l'Agent Wazuh pour Ingestion des Logs 📡
+
+1.  **Modifier le fichier de configuration de l'agent Wazuh** (`/var/ossec/etc/ossec.conf`) sur **SRV-WEB**.
+
+2.  **Ajouter la section `localfile`** pour spécifier le chemin du log et le format JSON :
+
+    ```xml
+    <ossec_config>
+      <localfile>
+        <log_format>json</log_format>
+        <location>/var/log/suricata/eve.json</location>
+      </localfile>
+    </ossec_config>
+    ```
+
+3.  **Redémarrer l'agent Wazuh** pour que la nouvelle configuration soit prise en compte :
+
+    ```bash
+    systemctl restart wazuh-agent
+    ```
+
+### Étape 3: Génération de Trafic de Test 💥
+
+1.  **Sur la machine Kali (Hôte attaquant)**, générez 30 ping vers le serveur web (IP_DE_SRV-WEB).
+
+    ```bash
+    ping -c 30 IP_DE_SRV-WEB
+    ```
+
+## 🚀 Vérification et Validation (Attaques/Tests)
+
+### Étape 4: Observation des Alertes 👁️
+
+1.  **Sur le SRV-WEB**, observez en temps réel le contenu du fichier de log d'événements de Suricata :
+
+    ```bash
+    tail -f /var/log/suricata/eve.json
+    ```
+
+2.  **Observation sur le Dashboard Wazuh** : Vérifiez que les alertes ICMP (provenant de Suricata) sont remontées sur l'interface Wazuh Manager pour l'agent SRV-WEB.
+
+# Intégration de Wazuh (SIEM) et GLPI (ITSM) pour la Gestion Automatisée des Incidents de Sécurité
+
+## 📝 Introduction & Objectif
+Ce Travail Pratique (TP) vise à automatiser la gestion des incidents de cybersécurité en intégrant le **SIEM Wazuh** avec l'outil **ITSM GLPI**. L'objectif est de configurer une réponse active (Active Response) dans Wazuh qui utilise l'API de GLPI pour créer automatiquement des tickets incidents dès qu'une alerte critique est détectée.
+
+## ⚙️ Prérequis (Matériel, Logiciel, Connaissances)
+
+### Matériel / Machines Virtuelles
+* **GLPI Server** : Serveur installé et opérationnel, accessible à l'adresse `http://172.16.0.8/`.
+* **Wazuh Manager Server** : Serveur Wazuh configuré.
+* **Kali Linux** : Machine utilisée pour générer l'attaque de test.
+
+### Informations de Connexion GLPI
+* **URL de connexion** : `http://172.16.0.8/`
+* **Compte administrateur** : `identifiant: glpi`, `mot de passe: glpi`
+
+## 🛠️ Étapes Détaillées de Mise en Œuvre
+
+### Étape 1: Préparation de l'Infrastructure et Activation de l'API GLPI
+
+1.  **Importation et connexion aux VMs** :
+    * Importez les différentes VM et modifiez les connexions réseaux (LAN SEGMENT) si besoin.
+2.  **Connexion à GLPI** :
+    * Connectez-vous à l’interface web de GLPI : `http://172.16.0.8/`.
+    * Utilisez le compte administrateur (`glpi`/`glpi`).
+3.  **Activation de l'API Rest (Interface Web GLPI)** :
+    * Activez l’API Rest et activez la connexion avec un jeton externe.
+4.  **Création du Client API Wazuh (Interface Web GLPI)** :
+    * Ajoutez un client de l’API, **`wazuh_api`**, en indiquant l'adresse IPv4 du serveur Wazuh.
+    * Régénérez un **jeton d’application (app\_token)**.
+5.  **Création de l'utilisateur API GLPI (Interface Web GLPI)** :
+    * Allez dans **Administration > Utilisateurs > Ajouter un utilisateur**.
+    * Créez l'utilisateur avec l'identifiant **`wazuh`**. Configurez son fuseau horaire.
+6.  **Génération du Jeton Utilisateur (Interface Web GLPI)** :
+    * Sélectionnez l'utilisateur **`wazuh`** puis dans la partie **Clefs d’accès distant**, régénérez un **jeton d’API (user\_token)**.
+7.  **Sauvegarde** : Enregistrez les deux tokens (**app\_token** et **user\_token**).
+
+### Étape 2: Test de l'API depuis le Serveur Wazuh
+
+Effectuez les tests suivants dans la console Shell du serveur Wazuh. **Remplacez** les valeurs des jetons et de l'IP (`172.16.0.8`) si nécessaire.
+
+1.  **Test d'authentification (initSession)** :
+
+    ```bash
+    curl -X GET \
+    -H 'Content-Type: application/json' \
+    -H "Authorization: user_token insérer_ici_votre_user_token" \
+    -H "App-Token: insérer_ici_votre_app_token" \
+    '[http://172.16.0.8/apirest.php/initSession?get_full_session=true](http://172.16.0.8/apirest.php/initSession?get_full_session=true)'
+    ```
+
+    * **Note :** Si le test est correct, vous recevrez un `session_token`.
+
+2.  **Génération d’un ticket de test (POST /Ticket)** :
+    * Utilisez le `session_token` reçu précédemment (ex : `bk6smoi2cj0mgj7i1p22sinakr`).
+
+    ```bash
+    curl -X POST \
+    -H 'Content-Type: application/json' \
+    -H 'Authorization: user_token insérer_ici_votre_user_token' \
+    -H 'App-Token: insérer_ici_votre_app_token' \
+    -H 'Session-Token: bk6smoi2cj0mgj7i1p22sinakr' \
+    -d '{
+    "input": {
+    "name": "Alerte Wazuh - Test API",
+    "content": "Ceci est un ticket créé automatiquement depuis Wazuh via API",
+    "priority": 4,
+    "urgency": 3,
+    "impact": 3,
+    "status": 1,
+    "type": 1,
+    "itilcategories_id": 2
+    }
+    }' \
+    [http://172.16.0.8/apirest.php/Ticket](http://172.16.0.8/apirest.php/Ticket)
+    ```
+
+    * Vérifiez la création du ticket sous GLPI.
+
+3.  **Fermeture de la session (killSession)** :
+
+    ```bash
+    curl -X GET \
+    -H 'Authorization: user_token insérer_ici_votre_user_token' \
+    -H 'App-Token: insérer_ici_votre_app_token' \
+    -H 'Session-Token: bk6smoi2cj0mgj7i1p22sinakr' \
+    [http://172.16.0.8/apirest.php/killSession](http://172.16.0.8/apirest.php/killSession)
+    ```
+
+### Étape 3: Mise en place du Script de Réponse Active
+
+1.  **Création du fichier de log et droits** :
+
+    ```bash
+    touch /var/log/glpi_ticket.log
+    # Adaptez le propriétaire et les droits si nécessaire (root:wazuh recommandé)
+    chown root:wazuh /var/log/glpi_ticket.log
+    chmod 660 /var/log/glpi_ticket.log
+    ```
+
+2.  **Copie et modification du script** :
+    * Copiez le code ci-dessous dans le fichier **/var/ossec/active-response/bin/glpi\_ticket.sh** sur le serveur Wazuh.
+    * **Remplacez** les valeurs des variables `APP_TOKEN` et `USER_TOKEN`.
+
+    ```bash
+    #!/bin/bash
+    # Script Active Response Wazuh → GLPI
+    # Version améliorée avec logs et mapping gravité → priorité
+
+    GLPI_URL="[http://172.16.0.8/apirest.php](http://172.16.0.8/apirest.php)"
+    APP_TOKEN="IbQdjd32WUg5wAJrpQb7ZwnWdyVHLfITNriLrQHy" # À MODIFIER
+    USER_TOKEN="wPNzhNzcwZNdabEJFBVzT4xkBg2BnWyZwQhlDWhv" # À MODIFIER
+
+    LOGFILE="/var/log/glpi_ticket.log"
+
+    # Lire tout le JSON d’entrée (multi-lignes possible)
+    INPUT_JSON=$(cat)
+
+    ALERT_DATE=$(date '+%Y-%m-%d %H:%M:%S %z')
+
+    echo "$(date) - Script exécuté par Wazuh" >> /var/log/glpi_ticket.log
+    echo "$INPUT_JSON" >> /var/log/glpi_ticket.log
+
+    # Extraire infos utiles avec jq
+    RULE_ID=$(echo "$INPUT_JSON" | jq -r '.parameters.alert.rule.id')
+    RULE_DESC=$(echo "$INPUT_JSON" | jq -r '.parameters.alert.rule.description')
+    AGENT_NAME=$(echo "$INPUT_JSON" | jq -r '.parameters.alert.agent.name')
+    SRC_IP=$(echo "$INPUT_JSON" | jq -r '.parameters.alert.data.srcip // empty')
+    SEVERITY=$(echo "$INPUT_JSON" | jq -r '.parameters.alert.rule.level')
+    LOG=$(echo "$INPUT_JSON" | jq -r '.parameters.alert.full_log')
+
+    # Mapping gravité Wazuh (level) → priorité GLPI
+    if [ "$SEVERITY" -le 3 ]; then
+    PRIORITY=1   # Faible
+    elif [ "$SEVERITY" -le 7 ]; then
+    PRIORITY=3   # Moyen
+    else
+    PRIORITY=5   # Critique
+    fi
+
+    # Ouvrir une session GLPI
+    SESSION_TOKEN=$(curl -s -X GET \
+    -H "Authorization: user_token $USER_TOKEN" \
+    -H "App-Token: $APP_TOKEN" \
+    "$GLPI_URL/initSession" | jq -r '.session_token')
+
+    # Créer le ticket
+    RESPONSE=$(curl -s -X POST \
+    -H "Content-Type: application/json" \
+    -H "App-Token: $APP_TOKEN" \
+    -H "Session-Token: $SESSION_TOKEN" \
+    -d "{
+    \"input\": {
+    \"name\": \"Alerte Wazuh - $RULE_DESC\",
+    \"content\": \"🚨 Alerte Wazuh\n\n- Date alerte : $ALERT_DATE\n- Règle ID : $RULE_ID\n- Description : $RULE_DESC\n- Agent : $AGENT_NAME\n- Source IP : $SRC_IP\n- Gravité : $SEVERITY\n- Log : $LOG\",
+    \"priority\": $PRIORITY,
+    \"urgency\": 3,
+    \"impact\": 3,
+    \"status\": 1,
+    \"type\": 1,
+    \"itilcategories_id\": 2
+    }
+    }" \
+    "$GLPI_URL/Ticket")
+
+    # Fermer la session
+    curl -s -X GET \
+    -H "App-Token: $APP_TOKEN" \
+    -H "Session-Token: $SESSION_TOKEN" \
+    "$GLPI_URL/killSession" > /dev/null
+
+    # Log local pour suivi
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - Ticket créé : Règle=$RULE_ID, Desc=$RULE_DESC, IP=$SRC_IP, Gravité=$SEVERITY, Priorité=$PRIORITY" >> "$LOGFILE"
+    ```
+
+3.  **Modification des droits du script** :
+
+    ```bash
+    chown root:wazuh /var/ossec/active-response/bin/glpi_ticket.sh
+    chmod 750 /var/ossec/active-response/bin/glpi_ticket.sh
+    ```
+
+4.  **Test manuel du script** :
+
+    ```bash
+    echo '{"parameters":{"alert":{"rule":{"id":"5710","description":"Tentative brute force SSH","level":10},"agent":{"id":"001","name":"srv-web"},"data":{"srcip":"172.16.0.50"},"full_log":"sshd failed login"}}}' | /var/ossec/active-response/bin/glpi_ticket.sh
+    ```
+
+    * Un ticket doit être créé sur GLPI.
+
+### Étape 4: Configuration de la Réponse Active Wazuh
+
+1.  **Modification du fichier de configuration du Wazuh Manager** (`/var/ossec/etc/ossec.conf`) :
+    * Ajoutez la définition de la commande :
+
+    ```xml
+    <command>
+      <name>glpi_ticket</name>
+      <executable>glpi_ticket.sh</executable>
+      <expect>none</expect>
+      <timeout_allowed>yes</timeout_allowed>
+    </command>
+    ```
+
+    * Ajoutez la règle de réponse active pour la Rule ID **5763** (attaque ssh):
+
+    ```xml
+    <active-response>
+      <command>glpi_ticket</command>
+      <location>server</location>
+      <rules_id>5763</rules_id>
+      <timeout>60</timeout>
+    </active-response>
+    ```
+
+2.  **Redémarrage du service Wazuh Manager** :
+
+    ```bash
+    systemctl restart wazuh-manager
+    ```
+
+## 🚀 Vérification et Validation (Attaques/Tests)
+
+1.  **Lancement de l'attaque** :
+    * Avec la machine Kali Linux, effectuez une attaque sur le service ssh du serveur cible (DVWA/SRV-WEB).
+
+2.  **Vérification de la création du ticket** :
+    * Vérifiez la bonne création du ticket incident sur GLPI.
+
+## 📚 Conclusion et Références
+
+* **Gestion des tickets incidents** : Connectez-vous avec le compte **SOC-N1** et testez la gestion de ces tickets incidents (réponse, escalade, clôture).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
