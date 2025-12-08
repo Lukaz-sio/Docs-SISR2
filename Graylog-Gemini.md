@@ -93,7 +93,7 @@ Ce Travail Pratique (TP) vise à mettre en place une solution complète de **cen
 2.  **Configuration de nxlog.conf :**
     * Ouvrez `C:\Program Files\nxlog\conf\nxlog.conf` et ajoutez les blocs de configuration suivants (à la fin du programme) pour envoyer les événements de **Sécurité** vers Graylog :
 
-    ```conf
+```conf
 # Récupérer les journaux de l'observateur d'événements
 <Input in>
     Module          im_msvistalog
@@ -122,7 +122,7 @@ Ce Travail Pratique (TP) vise à mettre en place une solution complète de **cen
 <Route 1>
     Path            in => graylog_udp
 </Route>
-    ```
+```
 
 3.  **Redémarrage du service :**
     * Redémarrez le service NXLog via PowerShell (en Administrateur) :

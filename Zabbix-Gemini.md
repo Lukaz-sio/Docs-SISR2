@@ -209,14 +209,14 @@ L'infrastructure utilise le schéma suivant :
 1.  **Configuration d'Apache (SRV-WEB1) :**
     * Ouvrez le fichier `/etc/apache2/mods-enabled/status.conf` et modifiez la partie ci-dessous pour autoriser l'accès à la page de statut Apache.
 
-    ```bash
+```bash
 <Location/server-status>
 SetHandler server-status
 Require ip 127.0.0.1 192.168.0.0/24 172.16.0.0/24
 </Location>
-    ```
+```
 
-    * Redémarrez ensuite le service Apache2.
+* Redémarrez ensuite le service Apache2.
 
 2.  **Installation de l'Agent Zabbix sur SRV-WEB1 :**
     * Installez le paquet `zabbix-agent` sur le serveur web.
@@ -268,22 +268,24 @@ Require ip 127.0.0.1 192.168.0.0/24 172.16.0.0/24
     * Nom : `Nombre d'adresses DHCP disponibles trop faible`
     * Sévérité : `Haut`
     * Expression :
-        ```bash
+```bash
 last(/SRV-AD/1.3.6.1.4.1.311.1.3.2.1.1.3.172.16.0.0)<10
-        ```
+```
+
 2.  **Test :** Modifiez l'étendue DHCP sur SRV-AD1 pour provoquer un incident.
 
 #### Étape 5.2: Configuration du Serveur d'Envoi de Mail (ssmtp)
 
 1.  **Installation des paquets sur SRV-ZABBIX :**
-    ```bash
+
+```bash
 apt install ssmtp mailutils
-    ```
+```
 
 2.  **Configuration de ssmtp :**
     * Ouvrez le fichier `/etc/ssmtp/ssmtp.conf` et modifiez-le :
 
-    ```conf
+```conf
 root=adressemail@gmail.com
 mailhub=smtp.gmail.com:465
 hostname=zabbix
@@ -291,22 +293,22 @@ FromLineOverride=YES
 AuthUser adressemail@gmail.com
 AuthPass motdepasse
 UseTLS=YES
-    ```
+```
 
 3.  **Création du Script d'Alerte Zabbix :**
     * Créez et éditez le script :
-    ```bash
+```bash
 nano /usr/lib/zabbix/alertscripts/zabbix-sendmail
-    ```
-    * Contenu du script :
-    ```bash
+```
+* Contenu du script :
+```bash
 #!/bin/bash
 echo "\$3" | /usr/bin/mail -s "\$2" \$1
-    ```
-    * Permissions :
-    ```bash
+```
+* Permissions :
+```bash
 chmod +x /usr/lib/zabbix/alertscripts/zabbix-sendmail
-    ```
+```
 
 #### Étape 5.3: Configuration du Type de Média dans Zabbix (Interface Web)
 
