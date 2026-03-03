@@ -17,13 +17,13 @@ sudo apt-get install -y build-essential libcairo2-dev libjpeg62-turbo-dev libpng
 ## 2. 🛠️ Compilation et Installation de Guacamole Server
 
 ### 2.1. Téléchargement et compilation
-Nous utilisons la version **1.5.5**.
+Nous utilisons la version **1.6.0**.
 
 ```bash
 cd /tmp
-wget https://downloads.apache.org/guacamole/1.5.5/source/guacamole-server-1.5.5.tar.gz
-tar -xzf guacamole-server-1.5.5.tar.gz
-cd guacamole-server-1.5.5/
+wget https://downloads.apache.org/guacamole/1.6.0/source/guacamole-server-1.6.0.tar.gz
+tar -xzf guacamole-server-1.6.0.tar.gz
+cd guacamole-server-1.6.0/
 
 # Configuration (désactivation de guacenc si erreur FFmpeg)
 sudo ./configure --with-systemd-dir=/etc/systemd/system/
@@ -40,6 +40,16 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now guacd
 ```
 
+On vérifie le statut d'Apache Guacamole Server :
+```bash
+sudo systemctl status guacd
+```
+
+### 2.3. Créer le répertoire de configuration
+```bash
+sudo mkdir -p /etc/guacamole/{extensions,lib}
+```
+
 ## 3. 🌐 Installation de Guacamole Client (Web App)
 
 Guacamole nécessite **Tomcat 9**. Sur Debian 12, il faut utiliser les dépôts de Debian 11 (Bullseye).
@@ -54,8 +64,8 @@ sudo apt-get install -y tomcat9 tomcat9-admin tomcat9-common tomcat9-user
 ### 3.2. Déploiement du fichier .war
 ```bash
 cd /tmp
-wget https://downloads.apache.org/guacamole/1.5.5/binary/guacamole-1.5.5.war
-sudo mv guacamole-1.5.5.war /var/lib/tomcat9/webapps/guacamole.war
+wget https://downloads.apache.org/guacamole/1.6.0/binary/guacamole-1.6.0.war
+sudo mv guacamole-1.6.0.war /var/lib/tomcat9/webapps/guacamole.war
 sudo systemctl restart tomcat9
 ```
 
@@ -83,19 +93,19 @@ sudo mkdir -p /etc/guacamole/{extensions,lib}
 
 # Extension JDBC
 cd /tmp
-wget https://downloads.apache.org/guacamole/1.5.5/binary/guacamole-auth-jdbc-1.5.5.tar.gz
-tar -xzf guacamole-auth-jdbc-1.5.5.tar.gz
-sudo mv guacamole-auth-jdbc-1.5.5/mysql/guacamole-auth-jdbc-mysql-1.5.5.jar /etc/guacamole/extensions/
+wget https://downloads.apache.org/guacamole/1.5.5/binary/guacamole-auth-jdbc-1.6.0.tar.gz
+tar -xzf guacamole-auth-jdbc-1.6.0.tar.gz
+sudo mv guacamole-auth-jdbc-1.6.0/mysql/guacamole-auth-jdbc-mysql-1.6.0.jar /etc/guacamole/extensions/
 
 # Connecteur MySQL J
-wget https://dev.mysql.com/get/Downloads/Connector-J/mysql-connector-j-9.1.0.tar.gz
-tar -xzf mysql-connector-j-9.1.0.tar.gz
-sudo cp mysql-connector-j-9.1.0/mysql-connector-j-9.1.0.jar /etc/guacamole/lib/
+wget https://dev.mysql.com/get/Downloads/Connector-J/mysql-connector-j-9.6.0.tar.gz
+tar -xzf mysql-connector-j-9.6.0.tar.gz
+sudo cp mysql-connector-j-9.6.0/mysql-connector-j-9.6.0.jar /etc/guacamole/lib/
 ```
 
 ### 4.3. Import du schéma SQL
 ```bash
-cd /tmp/guacamole-auth-jdbc-1.5.5/mysql/schema/
+cd /tmp/guacamole-auth-jdbc-1.6.0/mysql/schema/
 cat *.sql | mysql -u root -p guacadb
 ```
 
