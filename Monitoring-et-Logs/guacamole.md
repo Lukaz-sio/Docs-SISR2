@@ -93,7 +93,7 @@ sudo mkdir -p /etc/guacamole/{extensions,lib}
 
 # Extension JDBC
 cd /tmp
-wget https://downloads.apache.org/guacamole/1.5.5/binary/guacamole-auth-jdbc-1.6.0.tar.gz
+wget https://downloads.apache.org/guacamole/1.6.0/binary/guacamole-auth-jdbc-1.6.0.tar.gz
 tar -xzf guacamole-auth-jdbc-1.6.0.tar.gz
 sudo mv guacamole-auth-jdbc-1.6.0/mysql/guacamole-auth-jdbc-mysql-1.6.0.jar /etc/guacamole/extensions/
 
@@ -149,9 +149,9 @@ sudo systemctl restart tomcat9 guacd mariadb
 ### 6.2. Configuration du MFA (TOTP)
 ```bash
 cd /tmp
-wget https://downloads.apache.org/guacamole/1.5.5/binary/guacamole-auth-totp-1.5.5.tar.gz
-tar -xzf guacamole-auth-totp-1.5.5.tar.gz
-sudo mv guacamole-auth-totp-1.5.5/guacamole-auth-totp-1.5.5.jar /etc/guacamole/extensions/
+wget https://downloads.apache.org/guacamole/1.6.0/binary/guacamole-auth-totp-1.6.0.tar.gz
+tar -xzf guacamole-auth-totp-1.6.0.tar.gz
+sudo mv guacamole-auth-totp-1.6.0/guacamole-auth-totp-1.6.0.jar /etc/guacamole/extensions/
 ```
 Ajoutez au fichier `guacamole.properties` :
 ```ini
@@ -170,9 +170,9 @@ Redémarrez Tomcat : `sudo systemctl restart tomcat9`.
 ### 7.1. Installation de l'extension
 ```bash
 cd /tmp
-wget https://downloads.apache.org/guacamole/1.5.5/binary/guacamole-history-recording-storage-1.5.5.tar.gz
-tar -xzf guacamole-history-recording-storage-1.5.5.tar.gz
-sudo mv guacamole-history-recording-storage-1.5.5/guacamole-history-recording-storage-1.5.5.jar /etc/guacamole/extensions/
+wget https://downloads.apache.org/guacamole/1.6.0/binary/guacamole-history-recording-storage-1.6.0.tar.gz
+tar -xzf guacamole-history-recording-storage-1.6.0.tar.gz
+sudo mv guacamole-history-recording-storage-1.6.0/guacamole-history-recording-storage-1.6.0.jar /etc/guacamole/extensions/
 ```
 
 ### 7.2. Configuration du stockage
