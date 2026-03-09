@@ -167,6 +167,26 @@ Redémarrez Tomcat : `sudo systemctl restart tomcat9`.
 
 ## 7. 🎥 Enregistrement des Sessions
 
+Rajouter un nouveau disque sur la machine guacamole IDE de 40 Go
+
+Sur la machine guacamole : 
+
+```bash
+fdisk -l
+``` 
+
+# Repérer le disque de 40Go (sda ou sdb)
+
+```bash
+fdisk /dev/sda
+p 
+n
+p
+#Laisser par défaut le numéro de partition, le premier secteur ainsi que le dernier secteur
+w
+mkfs.ext4 -b 4096 /dev/sda1
+```
+
 ### 7.1. Installation de l'extension
 ```bash
 cd /tmp
@@ -178,6 +198,7 @@ sudo mv guacamole-history-recording-storage-1.6.0/guacamole-history-recording-st
 ### 7.2. Configuration du stockage
 ```bash
 sudo mkdir -p /var/lib/guacamole/recordings
+mount /dev/sdb1 /var/lib/guacamole/recordings
 sudo chown root:tomcat /var/lib/guacamole/recordings
 sudo chmod 2750 /var/lib/guacamole/recordings
 sudo systemctl restart tomcat9
