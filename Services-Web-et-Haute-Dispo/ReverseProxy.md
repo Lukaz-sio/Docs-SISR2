@@ -35,6 +35,15 @@ backend back_guacamole
 haproxy -c -f /etc/haproxy/haproxy.cfg
 ```
 
+Redémarrer le service haproxy et l'activer :
+
+```bash
+systemctl restart haproxy
+systemctl enable haproxy
+```
+
+---
+
 # Suppression du /guacamole en fin d'URL sur serveur Guacamole
 cd /var/lib/tomcat9/webapps
 systemctl stop tomcat9
