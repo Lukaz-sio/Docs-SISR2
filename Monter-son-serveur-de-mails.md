@@ -54,17 +54,17 @@ Voici les étapes détaillées pour installer iRedMail directement sur votre ser
    *(Vérifiez la dernière version sur la [page de téléchargement iRedMail](https://www.iredmail.org/download.html))*
    ```bash
    cd /root
-   wget https://github.com/iredmail/iRedMail/archive/refs/tags/1.6.8.tar.gz
+   wget https://github.com/iredmail/iRedMail/archive/refs/tags/1.7.4.tar.gz
    ```
 
 3. **Décompresser l'archive** :
    ```bash
-   tar zxf 1.6.8.tar.gz
+   tar zxf 1.7.4.tar.gz
    ```
 
 4. **Lancer le script d'installation** :
    ```bash
-   cd iRedMail-1.6.8/
+   cd iRedMail-1.7.4/
    bash iRedMail.sh
    ```
 
