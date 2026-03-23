@@ -43,12 +43,44 @@ iRedMail est une solution open source complète reposant sur les composants suiv
    ```
 
 ### Installation de iRedMail
-Utilisez le [tutoriel d’installation lié ici](https://docs.iredmail.org/install.iredmail.on.debian.ubuntu.html) pour installer iRedMail. Lors des choix techniques, sélectionnez :
-- Un annuaire **OpenLDAP** pour la liaison future vers le serveur AD.
-- Une base de données **MySQL/MariaDB**.
-- Les modules : **iRedAdmin**, **Roundcubemail**, **Fail2ban**.
+Voici les étapes détaillées pour installer iRedMail directement sur votre serveur :
 
-**Redémarrez** la machine virtuelle iRedMail à la fin de l'installation.
+1. **Installer les prérequis** :
+   ```bash
+   apt-get install -y gzip dialog wget
+   ```
+
+2. **Télécharger la dernière version de iRedMail** :
+   *(Vérifiez la dernière version sur la [page de téléchargement iRedMail](https://www.iredmail.org/download.html))*
+   ```bash
+   cd /root
+   wget https://github.com/iredmail/iRedMail/archive/refs/tags/1.6.8.tar.gz
+   ```
+
+3. **Décompresser l'archive** :
+   ```bash
+   tar zxf 1.6.8.tar.gz
+   ```
+
+4. **Lancer le script d'installation** :
+   ```bash
+   cd iRedMail-1.6.8/
+   bash iRedMail.sh
+   ```
+
+Lors de l'installation via les fenêtres interactives de l'assistant, faites les choix suivants :
+- **Emplacement des mails** : laissez le dossier par défaut `/var/vmail/`.
+- **Backend d'authentification** : choisissez un annuaire **OpenLDAP** pour la liaison future vers le serveur AD.
+- **Base de données** : choisissez **MySQL/MariaDB** (un mot de passe d'administration sera généré automatiquement).
+- **Nom de domaine** : indiquez votre nom de domaine (ex: `sodecaf.local`).
+- **Composants optionnels** : cochez les modules **iRedAdmin**, **Roundcubemail**, et **Fail2ban**.
+
+Une fois toutes les questions répondues, tapez `Y` et faites *Entrée* pour lancer le déploiement automatique. 
+
+Une fois l'installation complètement terminée, **redémarrez** la machine virtuelle iRedMail :
+```bash
+reboot
+```
 
 ### Modification des permissions
 Une fois le serveur redémarré, modifiez les permissions du dossier contenant les mails :
