@@ -71,8 +71,8 @@ Voici les étapes détaillées pour installer iRedMail directement sur votre ser
 Lors de l'installation via les fenêtres interactives de l'assistant, faites les choix suivants :
 - **Emplacement des mails** : laissez le dossier par défaut `/var/vmail/`.
 - **Backend d'authentification** : choisissez un annuaire **OpenLDAP** pour la liaison future vers le serveur AD.
-- **Base de données** : choisissez **MySQL/MariaDB** (un mot de passe d'administration sera généré automatiquement).
-- **Nom de domaine** : indiquez votre nom de domaine (ex: `sodecaf.local`).
+- **Base de données** : choisissez **MySQL/MariaDB**.
+- **Nom de domaine** : indiquez votre nom de domaine (ex: `dc=sodecaf,dc=local`).
 - **Composants optionnels** : cochez les modules **iRedAdmin**, **Roundcubemail**, et **Fail2ban**.
 
 Une fois toutes les questions répondues, tapez `Y` et faites *Entrée* pour lancer le déploiement automatique. 
