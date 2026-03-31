@@ -141,12 +141,17 @@ Le principe : Postfix et Dovecot n'interrogeront pas le LDAP local d'iRedMail ma
    user_attrs = =home=/var/vmail/sodecaf.local/%Ln/,=uid=vmail,=gid=vmail,=mail=maildir:~/Maildir/
    ```
 
-3. Rechargez la configuration de Dovecot :
+3. Supprimer les redirections que l'AD renvoie vers d'autres partitions :
+   ```bash
+   echo "REFERRALS off" >> /etc/ldap/ldap.conf
+   ```
+
+4. Rechargez la configuration de Dovecot :
    ```bash
    systemctl reload dovecot
    ```
 
-4. **Tests de liaison depuis iRedMail** :
+5. **Tests de liaison depuis iRedMail** :
    *Test LDAP:*
    ```bash
    ldapsearch -x -H ldap://172.16.0.1:389 -D "CN=iredmail,OU=Services,OU=Sodecaf,DC=sodecaf,DC=local" -w Rootsio2017 -b "DC=sodecaf,DC=local" "(sAMAccountName=udev)" mail userPrincipalName displayName
