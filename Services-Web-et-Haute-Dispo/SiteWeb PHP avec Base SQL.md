@@ -21,8 +21,8 @@ CREATE DATABASE nom;
 ## 4. Créer un utilisateur avec mot de passe et droits
 
 ```sql
-CREATE USER 'User'@'localhost' IDENTIFIED BY 'secret';
-GRANT ALL PRIVILEGES ON nom.* TO 'User'@'localhost';
+CREATE USER 'User'@'%' IDENTIFIED BY 'secret';
+GRANT ALL PRIVILEGES ON nom.* TO 'User'@'%';
 FLUSH PRIVILEGES;
 ```
 
