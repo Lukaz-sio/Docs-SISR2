@@ -60,4 +60,4 @@ SELECT * FROM Visiteur;
 
 Adapte les noms (`nom`, `User`, `Visiteur`, etc.) selon ton projet.
 ET MODIFIER FICHIER /etc/mysql/mariadb.conf.d/50-server.cnf pour mettre bind-address = 0.0.0.0
-
+ET INSTALLER MARIADB SERVER
