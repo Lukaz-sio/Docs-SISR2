@@ -112,4 +112,5 @@ sudo systemctl restart apache2
 
 ---
 
-Votre serveur Apache sur Debian 12 est maintenant prêt à héberger votre site avec un hôte virtuel personnalisé
+INSTALLER MARIADB CLIENT + PHP + PHP-MYSQL
+MODIFIER FICHIER PHP BDGESTIONDONNES
